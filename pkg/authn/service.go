@@ -37,8 +37,14 @@ type service struct {
 }
 
 // NewService returns a new authn-service
-func NewService(cfg authn.Config) (Service, error) {
-	cli, err := authn.NewClient(cfg)
+func NewService(cfg Config) (Service, error) {
+	cli, err := authn.NewClient(authn.Config{
+		Issuer:         cfg.Issuer,
+		PrivateBaseURL: cfg.PrivateBaseAddress,
+		Audience:       cfg.Audience,
+		Username:       cfg.Username,
+		Password:       cfg.Password,
+	})
 	if err != nil {
 		return nil, err
 	}

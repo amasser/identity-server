@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/url"
 
-	authngo "github.com/keratin/authn-go/authn"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/authn"
 )
 
 func addHTTPTransportFlags(flags *pflag.FlagSet) {
@@ -31,7 +31,7 @@ func addAuthNFlags(cmd *cobra.Command) {
 	cmd.MarkFlagRequired("authn.audience")
 }
 
-func getAuthnConfig(cmd *cobra.Command) (authngo.Config, error) {
+func getAuthnConfig(cmd *cobra.Command) (authn.Config, error) {
 	f := cmd.Flags()
 
 	var (
@@ -45,7 +45,7 @@ func getAuthnConfig(cmd *cobra.Command) (authngo.Config, error) {
 	if issuer == "" {
 		s, err := url.Parse(server)
 		if err != nil {
-			return authngo.Config{}, err
+			return authn.Config{}, err
 		}
 
 		issuer = fmt.Sprintf("%s://%s", s.Scheme, s.Host)
@@ -55,17 +55,17 @@ func getAuthnConfig(cmd *cobra.Command) (authngo.Config, error) {
 		httpListen, _ := f.GetString("http.listen")
 		s, err := url.Parse(httpListen)
 		if err != nil {
-			return authngo.Config{}, err
+			return authn.Config{}, err
 		}
 
 		audience = s.Hostname()
 	}
 
-	return authngo.Config{
-		Audience:       audience,
-		PrivateBaseURL: server,
-		Password:       password,
-		Username:       user,
-		Issuer:         issuer,
+	return authn.Config{
+		Audience:           audience,
+		PrivateBaseAddress: server,
+		Password:           password,
+		Username:           user,
+		Issuer:             issuer,
 	}, nil
 }
