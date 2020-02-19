@@ -24,10 +24,9 @@ type UserRepository interface {
 // GroupRepository provides persistent storage for group information.
 type GroupRepository interface {
 	// Store stores a group, overwritting and existing one if necassary.
-	// Implementation should check the value of group.Members to determine
-	// how to proceed with members. The group.Members slice is only updated
-	// if storeMembers is set to true. Implementation must take care
-	// to copy the old value of group.Members otherwise.
+	// The groups member slice should only be persisted if storeMembers
+	// is set to true. Otherwise any previously set member slice must be
+	// copied for the new group.
 	Store(ctx context.Context, group Group, storeMembers bool) error
 
 	// Delete deletes an existing account group. Implementations tracking
