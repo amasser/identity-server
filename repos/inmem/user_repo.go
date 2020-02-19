@@ -5,7 +5,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/tierklinik-dobersberg/iam/v2/iam"
+	"github.com/tierklinik-dobersberg/identity-server/iam"
 )
 
 type userRepository struct {

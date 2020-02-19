@@ -12,7 +12,7 @@ import (
 	"github.com/go-kit/kit/transport"
 	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
-	"github.com/tierklinik-dobersberg/iam/v2/iam"
+	"github.com/tierklinik-dobersberg/identity-server/iam"
 )
 
 // MakeHandler returns a http.Handler for the user management service

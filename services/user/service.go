@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/tierklinik-dobersberg/iam/v2/iam"
-	"github.com/tierklinik-dobersberg/iam/v2/pkg/authn"
-	"github.com/tierklinik-dobersberg/iam/v2/pkg/mutex"
+	"github.com/tierklinik-dobersberg/identity-server/iam"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/authn"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/mutex"
 )
 
 // ErrInvalidArgument is returned when an invalid argument is passed to

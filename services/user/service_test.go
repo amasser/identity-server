@@ -10,7 +10,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/tierklinik-dobersberg/iam/v2/iam"
+	"github.com/tierklinik-dobersberg/identity-server/iam"
 )
 
 var bg = context.Background()

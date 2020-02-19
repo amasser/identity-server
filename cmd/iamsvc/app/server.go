@@ -9,10 +9,10 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/spf13/cobra"
-	"github.com/tierklinik-dobersberg/iam/v2/iam"
-	"github.com/tierklinik-dobersberg/iam/v2/pkg/authn"
-	"github.com/tierklinik-dobersberg/iam/v2/repos/bbolt"
-	"github.com/tierklinik-dobersberg/iam/v2/services/user"
+	"github.com/tierklinik-dobersberg/identity-server/iam"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/authn"
+	"github.com/tierklinik-dobersberg/identity-server/repos/bbolt"
+	"github.com/tierklinik-dobersberg/identity-server/services/user"
 )
 
 // NewIAMCommand returns a new IAM server command

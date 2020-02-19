@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/go-kit/kit/endpoint"
-	"github.com/tierklinik-dobersberg/iam/v2/iam"
+	"github.com/tierklinik-dobersberg/identity-server/iam"
 )
 
 // Request body used to create a new user account

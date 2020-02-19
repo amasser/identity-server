@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/tierklinik-dobersberg/iam/v2/cmd/iamsvc/app"
+	"github.com/tierklinik-dobersberg/identity-server/cmd/iamsvc/app"
 )
 
 var (

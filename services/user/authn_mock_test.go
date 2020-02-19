@@ -2,7 +2,7 @@ package user
 
 import (
 	"github.com/stretchr/testify/mock"
-	"github.com/tierklinik-dobersberg/iam/v2/pkg/authn"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/authn"
 )
 
 type authnMock struct {
