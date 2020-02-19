@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/tierklinik-dobersberg/iam/v2/iam"
+	"github.com/tierklinik-dobersberg/iam/v2/pkg/authn"
 	"github.com/tierklinik-dobersberg/iam/v2/pkg/mutex"
 )
 
@@ -20,10 +21,17 @@ var ErrInvalidArgument = errors.New("invalid argument")
 type Service interface {
 	// CreateUser creates a new user account in the user management system and returns
 	// the new unique user URN.
-	CreateUser(ctx context.Context, accountID int, username string, attrs map[string]interface{}) (iam.UserURN, error)
+	CreateUser(ctx context.Context, username, password string, attrs map[string]interface{}) (iam.UserURN, error)
 
 	// LoadUser returns the read model of a user.
 	LoadUser(ctx context.Context, urn iam.UserURN) (iam.User, error)
+
+	// DeleteUser deletes the user account from IAM and archives it
+	// on authn-server
+	DeleteUser(ctx context.Context, urn iam.UserURN) error
+
+	// LockUser locks or unlocks a user account
+	LockUser(ctx context.Context, urn iam.UserURN, locked bool) error
 
 	// Users returns the read model of all available users.
 	Users(ctx context.Context) ([]iam.User, error)
@@ -39,19 +47,31 @@ type Service interface {
 }
 
 type service struct {
-	m    *mutex.Mutex
-	repo iam.UserRepository
+	authn authn.Service
+	m     *mutex.Mutex
+	repo  iam.UserRepository
 }
 
-func (s *service) CreateUser(ctx context.Context, accountID int, username string, attrs map[string]interface{}) (iam.UserURN, error) {
+func (s *service) CreateUser(ctx context.Context, username, password string, attrs map[string]interface{}) (urn iam.UserURN, err error) {
 	if !s.m.TryLock(ctx) {
 		return "", ctx.Err()
 	}
 	defer s.m.Unlock()
 
-	urn := iam.UserURN(fmt.Sprintf("urn:iam::user/%d", accountID))
+	accountID, err := s.authn.ImportAccount(username, password, false)
+	if err != nil {
+		return "", err
+	}
+	defer func() {
+		if err != nil {
+			// TODO(ppacher): log that!
+			s.authn.ArchiveAccount(accountID)
+		}
+	}()
 
-	_, err := s.repo.Load(ctx, urn)
+	urn = iam.UserURN(fmt.Sprintf("urn:iam::user/%d", accountID))
+
+	_, err = s.repo.Load(ctx, urn)
 	if err == nil {
 		return "", os.ErrExist
 	}
@@ -88,6 +108,52 @@ func (s *service) Users(ctx context.Context) ([]iam.User, error) {
 	defer s.m.Unlock()
 
 	return s.repo.Get(ctx)
+}
+
+func (s *service) DeleteUser(ctx context.Context, urn iam.UserURN) error {
+	if urn == "" {
+		return ErrInvalidArgument
+	}
+
+	if !s.m.TryLock(ctx) {
+		return ctx.Err()
+	}
+	defer s.m.Unlock()
+
+	user, err := s.repo.Load(ctx, urn)
+	if err != nil {
+		return err
+	}
+
+	if err := s.authn.ArchiveAccount(user.AccountID); err != nil {
+		return err
+	}
+
+	return s.repo.Delete(ctx, urn)
+}
+
+func (s *service) LockUser(ctx context.Context, urn iam.UserURN, locked bool) error {
+	if urn == "" {
+		return ErrInvalidArgument
+	}
+
+	if !s.m.TryLock(ctx) {
+		return ctx.Err()
+	}
+	defer s.m.Unlock()
+
+	user, err := s.repo.Load(ctx, urn)
+	if err != nil {
+		return err
+	}
+
+	if locked {
+		err = s.authn.LockAccount(user.AccountID)
+	} else {
+		err = s.authn.UnlockAccount(user.AccountID)
+	}
+
+	return err
 }
 
 func (s *service) UpdateAttrs(ctx context.Context, urn iam.UserURN, attr map[string]interface{}) error {
@@ -156,9 +222,10 @@ func (s *service) DeleteAttr(ctx context.Context, urn iam.UserURN, key string) e
 }
 
 // NewService creates a new user management services
-func NewService(repo iam.UserRepository) Service {
+func NewService(repo iam.UserRepository, authn authn.Service) Service {
 	return &service{
-		m:    mutex.New(),
-		repo: repo,
+		authn: authn,
+		m:     mutex.New(),
+		repo:  repo,
 	}
 }

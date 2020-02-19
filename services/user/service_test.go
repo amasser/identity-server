@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/go-kit/kit/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/tierklinik-dobersberg/iam/v2/iam"
@@ -14,12 +15,20 @@ import (
 
 var bg = context.Background()
 
+func setupServiceTestBed() (Service, *userRepoMock, *authnMock) {
+	a := &authnMock{}
+	r := &userRepoMock{}
+	l := log.NewNopLogger()
+	s := NewService(r, a)
+
+	return NewLoggingService(l, s), r, a
+}
+
 func TestService_CreateUser(t *testing.T) {
 	t.Run("Create_Successful", func(t *testing.T) {
 		t.Parallel()
 
-		r := &userRepoMock{}
-		svc := NewService(r)
+		svc, r, a := setupServiceTestBed()
 
 		expectedUser := iam.User{
 			AccountID: 1,
@@ -34,8 +43,9 @@ func TestService_CreateUser(t *testing.T) {
 
 		r.On("Load", iam.UserURN("urn:iam::user/1")).Once().Return(iam.User{}, os.ErrNotExist)
 		r.On("Store", expectedUser).Return(nil)
+		a.On("ImportAccount", "admin", "password", false).Once().Return(1, nil)
 
-		userUrn, err := svc.CreateUser(bg, 1, "admin", map[string]interface{}{
+		userUrn, err := svc.CreateUser(bg, "admin", "password", map[string]interface{}{
 			"role":       "admin",
 			"job":        "IT Administrator",
 			"department": "IT",
@@ -49,11 +59,13 @@ func TestService_CreateUser(t *testing.T) {
 	t.Run("Create_UserExists", func(t *testing.T) {
 		t.Parallel()
 
-		r := &userRepoMock{}
-		svc := NewService(r)
+		svc, r, a := setupServiceTestBed()
 
 		r.On("Load", iam.UserURN("urn:iam::user/2")).Once().Return(iam.User{}, nil)
-		_, err := svc.CreateUser(bg, 2, "admin", nil)
+		a.On("ImportAccount", "admin", "password", false).Once().Return(2, nil)
+		a.On("ArchiveAccount", 2).Once().Return(nil)
+
+		_, err := svc.CreateUser(bg, "admin", "password", nil)
 		assert.Error(t, err)
 		assert.True(t, os.IsExist(err))
 		r.AssertExpectations(t)
@@ -62,17 +74,22 @@ func TestService_CreateUser(t *testing.T) {
 	t.Run("Create_UnknownError", func(t *testing.T) {
 		t.Parallel()
 
-		r := &userRepoMock{}
-		svc := NewService(r)
+		svc, r, a := setupServiceTestBed()
 
 		r.On("Load", iam.UserURN("urn:iam::user/3")).Once().Return(iam.User{}, errors.New("simulated"))
-		_, err := svc.CreateUser(bg, 3, "admin", nil)
+		a.On("ImportAccount", "admin", "password", false).Once().Return(3, nil)
+		a.On("ArchiveAccount", 3).Once().Return(nil)
+
+		_, err := svc.CreateUser(bg, "admin", "password", nil)
 		assert.Error(t, err)
 		assert.Equal(t, "simulated", err.Error())
 
 		r.On("Load", iam.UserURN("urn:iam::user/3")).Once().Return(iam.User{}, os.ErrNotExist)
+		a.On("ImportAccount", "admin", "password", false).Once().Return(3, nil)
 		r.On("Store", mock.Anything).Once().Return(errors.New("simulated 2"))
-		_, err = svc.CreateUser(bg, 3, "admin", nil)
+		a.On("ArchiveAccount", 3).Once().Return(nil)
+
+		_, err = svc.CreateUser(bg, "admin", "password", nil)
 		assert.Error(t, err)
 		assert.Equal(t, "simulated 2", err.Error())
 	})
@@ -83,8 +100,7 @@ func TestService_LoadUser(t *testing.T) {
 	t.Run("Load_InvalidArgs", func(t *testing.T) {
 		t.Parallel()
 
-		r := &userRepoMock{}
-		svc := NewService(r)
+		svc, r, _ := setupServiceTestBed()
 
 		_, err := svc.LoadUser(bg, "")
 		assert.Error(t, err)
@@ -96,8 +112,7 @@ func TestService_LoadUser(t *testing.T) {
 	t.Run("Load_Success", func(t *testing.T) {
 		t.Parallel()
 
-		r := &userRepoMock{}
-		svc := NewService(r)
+		svc, r, _ := setupServiceTestBed()
 
 		expectedUser := expectedUser(10)
 
@@ -109,12 +124,115 @@ func TestService_LoadUser(t *testing.T) {
 	})
 }
 
+func TestService_DeleteUser(t *testing.T) {
+	t.Run("Delete_Sucess", func(t *testing.T) {
+		t.Parallel()
+
+		svc, r, a := setupServiceTestBed()
+
+		r.On("Load", iam.UserURN("urn:iam::user/10")).Once().Return(expectedUser(10), nil)
+		a.On("ArchiveAccount", 10).Once().Return(nil)
+		r.On("Delete", iam.UserURN("urn:iam::user/10")).Once().Return(nil)
+
+		assert.NoError(t, svc.DeleteUser(bg, "urn:iam::user/10"))
+		r.AssertExpectations(t)
+		a.AssertExpectations(t)
+	})
+
+	t.Run("Delete_InvalidURN", func(t *testing.T) {
+		t.Parallel()
+
+		svc, r, a := setupServiceTestBed()
+
+		assert.Error(t, svc.DeleteUser(bg, ""))
+		r.AssertExpectations(t)
+		a.AssertExpectations(t)
+	})
+
+	t.Run("Delete_Load_Failed", func(t *testing.T) {
+		t.Parallel()
+
+		svc, r, a := setupServiceTestBed()
+
+		r.On("Load", iam.UserURN("urn:iam::user/10")).Once().Return(iam.User{}, errors.New("some-error"))
+
+		assert.Error(t, svc.DeleteUser(bg, "urn:iam::user/10"))
+		r.AssertExpectations(t)
+		a.AssertExpectations(t)
+	})
+
+	t.Run("Delete_ArchiveAccount_Failed", func(t *testing.T) {
+		t.Parallel()
+
+		svc, r, a := setupServiceTestBed()
+		r.On("Load", iam.UserURN("urn:iam::user/10")).Once().Return(expectedUser(10), nil)
+		a.On("ArchiveAccount", 10).Once().Return(errors.New("simulated"))
+
+		assert.Error(t, svc.DeleteUser(bg, "urn:iam::user/10"))
+		r.AssertExpectations(t)
+		a.AssertExpectations(t)
+	})
+
+	t.Run("Delete_Delete_Failed", func(t *testing.T) {
+		t.Parallel()
+
+		svc, r, a := setupServiceTestBed()
+
+		r.On("Load", iam.UserURN("urn:iam::user/10")).Once().Return(expectedUser(10), nil)
+		a.On("ArchiveAccount", 10).Once().Return(nil)
+		r.On("Delete", iam.UserURN("urn:iam::user/10")).Once().Return(errors.New("delete-failed"))
+
+		assert.Error(t, svc.DeleteUser(bg, "urn:iam::user/10"))
+		r.AssertExpectations(t)
+		a.AssertExpectations(t)
+	})
+}
+
+func TestService_LockUser(t *testing.T) {
+	t.Run("Invalid argument", func(t *testing.T) {
+		svc, _, _ := setupServiceTestBed()
+		assert.Error(t, svc.LockUser(bg, "", true))
+	})
+
+	t.Run("Load failed", func(t *testing.T) {
+		svc, r, _ := setupServiceTestBed()
+		r.On("Load", iam.UserURN("urn:iam::user/10")).Once().Return(iam.User{}, errors.New("not found"))
+
+		err := svc.LockUser(bg, "urn:iam::user/10", true)
+		assert.Error(t, err)
+		assert.Equal(t, "not found", err.Error())
+	})
+
+	t.Run("LockAccount", func(t *testing.T) {
+		svc, r, a := setupServiceTestBed()
+		r.On("Load", iam.UserURN("urn:iam::user/10")).Once().Return(expectedUser(10), nil)
+
+		a.On("LockAccount", 10).Once().Return(nil)
+		assert.NoError(t, svc.LockUser(bg, "urn:iam::user/10", true))
+	})
+
+	t.Run("LockAccount", func(t *testing.T) {
+		svc, r, a := setupServiceTestBed()
+		r.On("Load", iam.UserURN("urn:iam::user/10")).Once().Return(expectedUser(10), nil)
+
+		a.On("LockAccount", 10).Once().Return(errors.New("simulated"))
+		assert.Error(t, svc.LockUser(bg, "urn:iam::user/10", true))
+	})
+
+	t.Run("UnlockAccount", func(t *testing.T) {
+		svc, r, a := setupServiceTestBed()
+		r.On("Load", iam.UserURN("urn:iam::user/10")).Once().Return(expectedUser(10), nil)
+
+		a.On("UnlockAccount", 10).Once().Return(nil)
+		assert.NoError(t, svc.LockUser(bg, "urn:iam::user/10", false))
+	})
+}
+
 func TestService_Users(t *testing.T) {
 	t.Run("Users_Success", func(t *testing.T) {
 		t.Parallel()
 
-		r := &userRepoMock{}
-		svc := NewService(r)
+		svc, r, _ := setupServiceTestBed()
 
 		expectedUser := expectedUser(10)
 
@@ -131,8 +249,7 @@ func TestService_Users(t *testing.T) {
 	t.Run("Users_Failure", func(t *testing.T) {
 		t.Parallel()
 
-		r := &userRepoMock{}
-		svc := NewService(r)
+		svc, r, _ := setupServiceTestBed()
 
 		r.On("Get").Return(([]iam.User)(nil), errors.New("simulated"))
 		_, err := svc.Users(bg)
@@ -144,8 +261,7 @@ func TestService_UpdateAttrs(t *testing.T) {
 	t.Run("UpdateAttr_InvalidArg", func(t *testing.T) {
 		t.Parallel()
 
-		r := &userRepoMock{}
-		svc := NewService(r)
+		svc, _, _ := setupServiceTestBed()
 		err := svc.UpdateAttrs(bg, "", map[string]interface{}{"some": "key"})
 		assert.Error(t, err)
 		assert.Equal(t, ErrInvalidArgument, err)
@@ -154,8 +270,7 @@ func TestService_UpdateAttrs(t *testing.T) {
 	t.Run("UpdateAttr_NotExist", func(t *testing.T) {
 		t.Parallel()
 
-		r := &userRepoMock{}
-		svc := NewService(r)
+		svc, r, _ := setupServiceTestBed()
 		urn := iam.UserURN("urn:iam::user/11")
 
 		r.On("Load", urn).Once().Return(iam.User{}, os.ErrNotExist)
@@ -168,8 +283,7 @@ func TestService_UpdateAttrs(t *testing.T) {
 	t.Run("UpdateAttr_Success", func(t *testing.T) {
 		t.Parallel()
 
-		r := &userRepoMock{}
-		svc := NewService(r)
+		svc, r, _ := setupServiceTestBed()
 		urn := iam.UserURN("urn:iam::user/11")
 
 		inputUser := expectedUser(10)
@@ -192,8 +306,7 @@ func TestService_SetAttr(t *testing.T) {
 	t.Run("SetAttr_InvalidArg", func(t *testing.T) {
 		t.Parallel()
 
-		r := &userRepoMock{}
-		svc := NewService(r)
+		svc, _, _ := setupServiceTestBed()
 		err := svc.SetAttr(bg, "", "some", "key")
 		assert.Error(t, err)
 		assert.Equal(t, ErrInvalidArgument, err)
@@ -202,8 +315,7 @@ func TestService_SetAttr(t *testing.T) {
 	t.Run("SetAttr_NotExist", func(t *testing.T) {
 		t.Parallel()
 
-		r := &userRepoMock{}
-		svc := NewService(r)
+		svc, r, _ := setupServiceTestBed()
 		urn := iam.UserURN("urn:iam::user/11")
 
 		r.On("Load", urn).Once().Return(iam.User{}, os.ErrNotExist)
@@ -216,8 +328,7 @@ func TestService_SetAttr(t *testing.T) {
 	t.Run("SetAttr_Success", func(t *testing.T) {
 		t.Parallel()
 
-		r := &userRepoMock{}
-		svc := NewService(r)
+		svc, r, _ := setupServiceTestBed()
 		urn := iam.UserURN("urn:iam::user/11")
 
 		inputUser := expectedUser(10)
@@ -239,8 +350,7 @@ func TestService_SetAttr(t *testing.T) {
 	t.Run("SetAttr_Success_nil_Attributes", func(t *testing.T) {
 		t.Parallel()
 
-		r := &userRepoMock{}
-		svc := NewService(r)
+		svc, r, _ := setupServiceTestBed()
 		urn := iam.UserURN("urn:iam::user/11")
 
 		inputUser := expectedUser(10)
@@ -264,8 +374,7 @@ func TestService_DeleteAttr(t *testing.T) {
 	t.Run("DeleteAttr_InvalidArg", func(t *testing.T) {
 		t.Parallel()
 
-		r := &userRepoMock{}
-		svc := NewService(r)
+		svc, _, _ := setupServiceTestBed()
 		err := svc.DeleteAttr(bg, "", "job")
 		assert.Error(t, err)
 		assert.Equal(t, ErrInvalidArgument, err)
@@ -274,8 +383,7 @@ func TestService_DeleteAttr(t *testing.T) {
 	t.Run("DeleteAttr_NotExist", func(t *testing.T) {
 		t.Parallel()
 
-		r := &userRepoMock{}
-		svc := NewService(r)
+		svc, r, _ := setupServiceTestBed()
 		urn := iam.UserURN("urn:iam::user/11")
 
 		r.On("Load", urn).Once().Return(iam.User{}, os.ErrNotExist)
@@ -288,8 +396,7 @@ func TestService_DeleteAttr(t *testing.T) {
 	t.Run("DeleteAttr_Success", func(t *testing.T) {
 		t.Parallel()
 
-		r := &userRepoMock{}
-		svc := NewService(r)
+		svc, r, _ := setupServiceTestBed()
 		urn := iam.UserURN("urn:iam::user/11")
 
 		inputUser := expectedUser(10)
@@ -308,8 +415,7 @@ func TestService_DeleteAttr(t *testing.T) {
 	t.Run("DeleteAttr_Success_niL_Attributes", func(t *testing.T) {
 		t.Parallel()
 
-		r := &userRepoMock{}
-		svc := NewService(r)
+		svc, r, _ := setupServiceTestBed()
 		urn := iam.UserURN("urn:iam::user/11")
 
 		inputUser := expectedUser(10)

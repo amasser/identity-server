@@ -13,25 +13,24 @@ type loggingService struct {
 	Service
 }
 
-// NewLoggerService returns wraps s into a logging service.
-func NewLoggerService(logger log.Logger, s Service) Service {
+// NewLoggingService returns wraps s into a logging service.
+func NewLoggingService(logger log.Logger, s Service) Service {
 	return &loggingService{
 		logger:  logger,
 		Service: s,
 	}
 }
 
-func (s *loggingService) CreateUser(ctx context.Context, accountID int, username string, attrs map[string]interface{}) (id iam.UserURN, err error) {
+func (s *loggingService) CreateUser(ctx context.Context, username, password string, attrs map[string]interface{}) (id iam.UserURN, err error) {
 	defer func(begin time.Time) {
 		s.logger.Log(
 			"method", "create_user",
-			"accountID", accountID,
 			"username", username,
 			"took", time.Since(begin),
 			"err", err,
 		)
 	}(time.Now())
-	return s.Service.CreateUser(ctx, accountID, username, attrs)
+	return s.Service.CreateUser(ctx, username, password, attrs)
 }
 
 func (s *loggingService) LoadUser(ctx context.Context, urn iam.UserURN) (user iam.User, err error) {
@@ -44,6 +43,31 @@ func (s *loggingService) LoadUser(ctx context.Context, urn iam.UserURN) (user ia
 		)
 	}(time.Now())
 	return s.Service.LoadUser(ctx, urn)
+}
+
+func (s *loggingService) DeleteUser(ctx context.Context, urn iam.UserURN) (err error) {
+	defer func(begin time.Time) {
+		s.logger.Log(
+			"method", "delete_user",
+			"urn", urn,
+			"took", time.Since(begin),
+			"err", err,
+		)
+	}(time.Now())
+	return s.Service.DeleteUser(ctx, urn)
+}
+
+func (s *loggingService) LockUser(ctx context.Context, urn iam.UserURN, locked bool) (err error) {
+	defer func(begin time.Time) {
+		s.logger.Log(
+			"method", "delete_user",
+			"urn", urn,
+			"locked", locked,
+			"took", time.Since(begin),
+			"err", err,
+		)
+	}(time.Now())
+	return s.Service.LockUser(ctx, urn, locked)
 }
 
 func (s *loggingService) Users(ctx context.Context) (users []iam.User, err error) {
