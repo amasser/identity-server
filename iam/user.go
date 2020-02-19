@@ -1,6 +1,6 @@
 package iam
 
-// UserURN uniquely identifies a paticular user
+// UserURN uniquely identifies a paticular user/account
 type UserURN string
 
 // User represents a user account managed by IAM and authenticated by
