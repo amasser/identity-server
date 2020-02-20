@@ -1,6 +1,8 @@
 package iam
 
-import "context"
+import (
+	"context"
+)
 
 // UserRepository provides persistent storage for user account information.
 type UserRepository interface {
@@ -24,10 +26,9 @@ type UserRepository interface {
 // GroupRepository provides persistent storage for group information.
 type GroupRepository interface {
 	// Store stores a group, overwritting and existing one if necassary.
-	// The groups member slice should only be persisted if storeMembers
-	// is set to true. Otherwise any previously set member slice must be
-	// copied for the new group.
-	Store(ctx context.Context, group Group, storeMembers bool) error
+	// Implementations should ignore the group.Member field as it is taken
+	// care of by the membership repository
+	Store(ctx context.Context, group Group) error
 
 	// Delete deletes an existing account group. Implementations tracking
 	// user-group assignments should clean them up as well. It is not required
@@ -42,4 +43,19 @@ type GroupRepository interface {
 
 	// Get should return all groups from the persistent storage.
 	Get(ctx context.Context) ([]Group, error)
+}
+
+// MembershipRepository persists user - group relationships
+type MembershipRepository interface {
+	// AddMember marks user as a member of group
+	AddMember(ctx context.Context, user UserURN, group GroupURN) error
+
+	// DeleteMember deletes user from group
+	DeleteMember(ctx context.Context, user UserURN, group GroupURN) error
+
+	// GetMemberships returns a list of groups user is a member of
+	Memberships(ctx context.Context, user UserURN) ([]GroupURN, error)
+
+	// Members returns a list or users that belong to group
+	Members(ctx context.Context, group GroupURN) ([]UserURN, error)
 }
