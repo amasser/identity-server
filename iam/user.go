@@ -10,6 +10,5 @@ type User struct {
 	Username   string                 `json:"username"`
 	ID         UserURN                `json:"id"`
 	Locked     *bool                  `json:"locked,omitempty"`
-	Groups     []*string              `json:"groups,omitempty"`
 	Attributes map[string]interface{} `json:"attrs,omitempty"`
 }
