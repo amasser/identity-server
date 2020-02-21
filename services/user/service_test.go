@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync"
 	"testing"
 
 	"github.com/go-kit/kit/log"
@@ -431,6 +432,36 @@ func TestService_DeleteAttr(t *testing.T) {
 		r.AssertExpectations(t)
 	})
 
+}
+
+func TestService_OnDelete(t *testing.T) {
+	svc, r, a := setupServiceTestBed()
+
+	calledWith := iam.UserURN("")
+	ctx, unregister := context.WithCancel(bg)
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	cb := func(urn iam.UserURN) {
+		defer wg.Done()
+		calledWith = urn
+	}
+	svc.OnDelete(ctx, cb)
+
+	inputUser := expectedUser(10)
+	r.On("Load", iam.UserURN("urn:iam::user/10")).Times(2).Return(inputUser, nil)
+	a.On("ArchiveAccount", 10).Times(2).Return(nil)
+	r.On("Delete", iam.UserURN("urn:iam::user/10")).Times(2).Return(nil)
+
+	assert.NoError(t, svc.DeleteUser(bg, "urn:iam::user/10"))
+	wg.Wait()
+	assert.Equal(t, iam.UserURN("urn:iam::user/10"), calledWith)
+
+	unregister()
+	calledWith = ""
+
+	assert.NoError(t, svc.DeleteUser(bg, "urn:iam::user/10"))
+	assert.Equal(t, iam.UserURN(""), calledWith)
 }
 
 type userRepoMock struct {

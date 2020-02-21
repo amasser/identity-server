@@ -274,3 +274,7 @@ func (s *serviceMock) SetAttr(_ context.Context, urn iam.UserURN, key string, va
 func (s *serviceMock) DeleteAttr(_ context.Context, urn iam.UserURN, key string) error {
 	return s.Called(urn, key).Error(0)
 }
+
+func (s *serviceMock) OnDelete(_ context.Context, fn OnDeleteFunc) {
+	s.Called(fn)
+}

@@ -22,7 +22,7 @@ type Service interface {
 
 	// Load loads an existing account from the repository optionally including
 	// a list of members URNs.
-	Load(ctx context.Context, urn iam.GroupURN, withMembers bool) (iam.Group, error)
+	Load(ctx context.Context, urn iam.GroupURN) (iam.Group, error)
 
 	// UpdateComment updates the comment of an account group
 	UpdateComment(ctx context.Context, urn iam.GroupURN, comment string) error

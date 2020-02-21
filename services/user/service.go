@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sync"
+	"sync/atomic"
 
 	"github.com/tierklinik-dobersberg/identity-server/iam"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/authn"
@@ -16,6 +18,10 @@ import (
 // ErrInvalidArgument is returned when an invalid argument is passed to
 // a Service method
 var ErrInvalidArgument = errors.New("invalid argument")
+
+// OnDeleteFunc is a callback function that is invoked when a user is deleted.
+// See Service.OnDelete() for more information.
+type OnDeleteFunc func(urn iam.UserURN)
 
 // Service is the interface that provides user management methods.
 type Service interface {
@@ -44,12 +50,20 @@ type Service interface {
 
 	// DeleteAttr deletes the attr key from the user identified by `id`
 	DeleteAttr(ctx context.Context, id iam.UserURN, key string) error
+
+	// OnDelete registers a callback function that is invoked whenever a user
+	// is deleted/archived. The registration gets disposed automatically when
+	// ctx gets cancelled.
+	OnDelete(ctx context.Context, fn OnDeleteFunc)
 }
 
 type service struct {
 	authn authn.Service
 	m     *mutex.Mutex
 	repo  iam.UserRepository
+
+	deleteFnsLock sync.RWMutex
+	deleteFns     map[int64]chan iam.UserURN
 }
 
 func (s *service) CreateUser(ctx context.Context, username, password string, attrs map[string]interface{}) (urn iam.UserURN, err error) {
@@ -128,6 +142,16 @@ func (s *service) DeleteUser(ctx context.Context, urn iam.UserURN) error {
 	if err := s.authn.ArchiveAccount(user.AccountID); err != nil {
 		return err
 	}
+
+	// notify all on-delete subscribes even
+	// if the actual delete operation fails
+	s.deleteFnsLock.RLock()
+	for _, ch := range s.deleteFns {
+		go func(ch chan<- iam.UserURN) {
+			ch <- urn
+		}(ch)
+	}
+	s.deleteFnsLock.RUnlock()
 
 	return s.repo.Delete(ctx, urn)
 }
@@ -221,11 +245,44 @@ func (s *service) DeleteAttr(ctx context.Context, urn iam.UserURN, key string) e
 	return s.repo.Store(ctx, user)
 }
 
+func (s *service) OnDelete(ctx context.Context, fn OnDeleteFunc) {
+	id := getUniqueSubscriberID()
+	c := make(chan iam.UserURN, 100)
+
+	s.deleteFnsLock.Lock()
+	s.deleteFns[id] = c
+	s.deleteFnsLock.Unlock()
+
+	go func(ch chan iam.UserURN) {
+		for {
+			select {
+			case urn := <-ch:
+				fn(urn)
+			case <-ctx.Done():
+
+				s.deleteFnsLock.Lock()
+				delete(s.deleteFns, id)
+				s.deleteFnsLock.Unlock()
+
+				close(ch)
+				return
+			}
+		}
+	}(c)
+}
+
 // NewService creates a new user management services
 func NewService(repo iam.UserRepository, authn authn.Service) Service {
 	return &service{
-		authn: authn,
-		m:     mutex.New(),
-		repo:  repo,
+		authn:     authn,
+		m:         mutex.New(),
+		repo:      repo,
+		deleteFns: make(map[int64]chan iam.UserURN, 10),
 	}
+}
+
+var nextUniqueSubscriber int64 = 0
+
+func getUniqueSubscriberID() int64 {
+	return atomic.AddInt64(&nextUniqueSubscriber, 1)
 }

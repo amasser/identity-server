@@ -118,3 +118,26 @@ func (s *loggingService) DeleteAttr(ctx context.Context, urn iam.UserURN, key st
 	}(time.Now())
 	return s.Service.DeleteAttr(ctx, urn, key)
 }
+
+func (s *loggingService) OnDelete(ctx context.Context, fn OnDeleteFunc) {
+	defer func(begin time.Time) {
+		s.logger.Log(
+			"method", "on_delete",
+			"took", time.Since(begin),
+		)
+	}(time.Now())
+
+	wrapped := func(urn iam.UserURN) {
+		defer func(begin time.Time) {
+			s.logger.Log(
+				"method", "on_delete_callback",
+				"took", time.Since(begin),
+				"urn", urn,
+			)
+		}(time.Now())
+
+		fn(urn)
+	}
+
+	s.Service.OnDelete(ctx, wrapped)
+}
