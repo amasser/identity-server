@@ -13,7 +13,7 @@ type loggingService struct {
 	Service
 }
 
-// NewLoggingService returns wraps s into a logging service.
+// NewLoggingService wraps s into a logging service.
 func NewLoggingService(logger log.Logger, s Service) Service {
 	return &loggingService{
 		logger:  logger,
