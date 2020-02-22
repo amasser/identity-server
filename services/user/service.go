@@ -52,8 +52,8 @@ type Service interface {
 	DeleteAttr(ctx context.Context, id iam.UserURN, key string) error
 
 	// OnDelete registers a callback function that is invoked whenever a user
-	// is deleted/archived. The registration gets disposed automatically when
-	// ctx gets cancelled.
+	// is deleted/archived. Note that the callback function *may* be unregistered
+	// when the provided context is cancelled.
 	OnDelete(ctx context.Context, fn OnDeleteFunc)
 }
 
@@ -63,7 +63,7 @@ type service struct {
 	repo  iam.UserRepository
 
 	deleteFnsLock sync.RWMutex
-	deleteFns     map[int64]chan iam.UserURN
+	deleteFns     map[int64]OnDeleteFunc
 }
 
 func (s *service) CreateUser(ctx context.Context, username, password string, attrs map[string]interface{}) (urn iam.UserURN, err error) {
@@ -146,10 +146,8 @@ func (s *service) DeleteUser(ctx context.Context, urn iam.UserURN) error {
 	// notify all on-delete subscribes even
 	// if the actual delete operation fails
 	s.deleteFnsLock.RLock()
-	for _, ch := range s.deleteFns {
-		go func(ch chan<- iam.UserURN) {
-			ch <- urn
-		}(ch)
+	for _, fn := range s.deleteFns {
+		go fn(urn)
 	}
 	s.deleteFnsLock.RUnlock()
 
@@ -247,28 +245,10 @@ func (s *service) DeleteAttr(ctx context.Context, urn iam.UserURN, key string) e
 
 func (s *service) OnDelete(ctx context.Context, fn OnDeleteFunc) {
 	id := getUniqueSubscriberID()
-	c := make(chan iam.UserURN, 100)
 
 	s.deleteFnsLock.Lock()
-	s.deleteFns[id] = c
+	s.deleteFns[id] = fn
 	s.deleteFnsLock.Unlock()
-
-	go func(ch chan iam.UserURN) {
-		for {
-			select {
-			case urn := <-ch:
-				fn(urn)
-			case <-ctx.Done():
-
-				s.deleteFnsLock.Lock()
-				delete(s.deleteFns, id)
-				s.deleteFnsLock.Unlock()
-
-				close(ch)
-				return
-			}
-		}
-	}(c)
 }
 
 // NewService creates a new user management services
@@ -277,7 +257,7 @@ func NewService(repo iam.UserRepository, authn authn.Service) Service {
 		authn:     authn,
 		m:         mutex.New(),
 		repo:      repo,
-		deleteFns: make(map[int64]chan iam.UserURN, 10),
+		deleteFns: make(map[int64]OnDeleteFunc, 10),
 	}
 }
 

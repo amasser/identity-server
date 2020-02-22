@@ -438,7 +438,6 @@ func TestService_OnDelete(t *testing.T) {
 	svc, r, a := setupServiceTestBed()
 
 	calledWith := iam.UserURN("")
-	ctx, unregister := context.WithCancel(bg)
 	var wg sync.WaitGroup
 
 	wg.Add(1)
@@ -446,7 +445,7 @@ func TestService_OnDelete(t *testing.T) {
 		defer wg.Done()
 		calledWith = urn
 	}
-	svc.OnDelete(ctx, cb)
+	svc.OnDelete(bg, cb)
 
 	inputUser := expectedUser(10)
 	r.On("Load", iam.UserURN("urn:iam::user/10")).Times(2).Return(inputUser, nil)
@@ -456,12 +455,6 @@ func TestService_OnDelete(t *testing.T) {
 	assert.NoError(t, svc.DeleteUser(bg, "urn:iam::user/10"))
 	wg.Wait()
 	assert.Equal(t, iam.UserURN("urn:iam::user/10"), calledWith)
-
-	unregister()
-	calledWith = ""
-
-	assert.NoError(t, svc.DeleteUser(bg, "urn:iam::user/10"))
-	assert.Equal(t, iam.UserURN(""), calledWith)
 }
 
 type userRepoMock struct {
