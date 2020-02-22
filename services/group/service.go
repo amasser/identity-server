@@ -139,9 +139,48 @@ func (s *service) UpdateComment(ctx context.Context, urn iam.GroupURN, comment s
 }
 
 func (s *service) AddMember(ctx context.Context, grp iam.GroupURN, member iam.UserURN) error {
-	return errNotImplemented
+	if !s.l.TryLock(ctx) {
+		return ctx.Err()
+	}
+	defer s.l.Unlock()
+
+	// Ensure the target group exists.
+	if _, err := s.groups.Load(ctx, grp); err != nil {
+		return err
+	}
+
+	// Ensure the user actually exists.
+	// We still might race with a Delete() call for the user,
+	// however, this isn't a problem as the callback for OnDelete()
+	// will be blocked until we finished adding the user to the
+	// group. Once it is unblocked, the user will be removed
+	// again.
+	if _, err := s.users.LoadUser(ctx, member); err != nil {
+		return err
+	}
+
+	// MembershipRepository already handles the case of a user
+	// already being part of the group. It's a no-op then.
+	if err := s.members.AddMember(ctx, member, grp); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *service) DeleteMember(ctx context.Context, grp iam.GroupURN, member iam.UserURN) error {
-	return errNotImplemented
+	if !s.l.TryLock(ctx) {
+		return ctx.Err()
+	}
+	defer s.l.Unlock()
+
+	if _, err := s.groups.Load(ctx, grp); err != nil {
+		return err
+	}
+
+	if err := s.members.DeleteMember(ctx, member, grp); err != nil {
+		return err
+	}
+
+	return nil
 }
