@@ -77,8 +77,8 @@ func MakeHandler(s Service, logger log.Logger) http.Handler {
 	r.Handle("/v1/groups/{id}", loadGroupHandler).Methods("GET")
 	r.Handle("/v1/groups/{id}", updateCommentHandler).Methods("PUT", "PATCH")
 	r.Handle("/v1/groups/{id}", deleteGroupHandler).Methods("DELETE")
-	r.Handle("/v1/groups/{id}/mebers/{user}", addMemberHandler).Methods("PUT")
-	r.Handle("/v1/groups/{id}/mebers/{user}", deleteMemberHandler).Methods("DELETE")
+	r.Handle("/v1/groups/{id}/members/{user}", addMemberHandler).Methods("PUT")
+	r.Handle("/v1/groups/{id}/members/{user}", deleteMemberHandler).Methods("DELETE")
 
 	return r
 }

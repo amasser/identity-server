@@ -2,6 +2,7 @@ package group
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/tierklinik-dobersberg/identity-server/iam"
@@ -32,6 +33,10 @@ type deleteGroupRequest struct {
 }
 
 type deleteGroupResponse struct{}
+
+func (d deleteGroupResponse) StatusCode() int {
+	return http.StatusNoContent
+}
 
 func makeDeleteGroupEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -84,6 +89,10 @@ type updateGroupCommentRequest struct {
 }
 type updateGroupCommentResponse struct{}
 
+func (d updateGroupCommentResponse) StatusCode() int {
+	return http.StatusNoContent
+}
+
 func makeUpdateGroupCommentEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(updateGroupCommentRequest)
@@ -101,6 +110,10 @@ type addMemberRequest struct {
 
 type addMemberResponse struct{}
 
+func (d addMemberResponse) StatusCode() int {
+	return http.StatusNoContent
+}
+
 func makeAddMemberEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(addMemberRequest)
@@ -117,6 +130,10 @@ type deleteMemberRequest struct {
 }
 
 type deleteMemberResponse struct{}
+
+func (d deleteMemberResponse) StatusCode() int {
+	return http.StatusNoContent
+}
 
 func makeDeleteMemberEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
