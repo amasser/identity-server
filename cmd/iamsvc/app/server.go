@@ -12,6 +12,8 @@ import (
 	"github.com/tierklinik-dobersberg/identity-server/iam"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/authn"
 	"github.com/tierklinik-dobersberg/identity-server/repos/bbolt"
+	"github.com/tierklinik-dobersberg/identity-server/repos/inmem"
+	"github.com/tierklinik-dobersberg/identity-server/services/group"
 	"github.com/tierklinik-dobersberg/identity-server/services/user"
 )
 
@@ -39,16 +41,43 @@ func runMain(cmd *cobra.Command, args []string) error {
 	logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
 	logger = log.With(logger, "ts", log.DefaultTimestampUTC)
 
-	// Prepare user repository (bbolt)
-	var users iam.UserRepository
-	{
-		path, err := cmd.Flags().GetString("database")
+	dbPath, err := cmd.Flags().GetString("database")
+	if err != nil {
+		return err
+	}
+
+	var db *bbolt.Database
+	if dbPath != ":memory:" {
+		db, err = bbolt.Open(dbPath)
 		if err != nil {
 			return err
 		}
-		users, err = bbolt.Open(path)
-		if err != nil {
-			return err
+	}
+
+	var users iam.UserRepository
+	{
+		if db == nil {
+			users = inmem.NewUserRepository()
+		} else {
+			users = db.UserRepo()
+		}
+	}
+
+	var groups iam.GroupRepository
+	{
+		if db == nil {
+			groups = inmem.NewGroupRepository()
+		} else {
+			groups = db.GroupRepo()
+		}
+	}
+
+	var members iam.MembershipRepository
+	{
+		if db == nil {
+			members = inmem.NewMembershipRepository()
+		} else {
+			members = db.MembershipRepo()
 		}
 	}
 
@@ -72,11 +101,19 @@ func runMain(cmd *cobra.Command, args []string) error {
 		us = user.NewLoggingService(log.With(logger, "component", "user"), us)
 	}
 
+	var gs group.Service
+	{
+		groupLogger := log.With(logger, "component", "group")
+		gs = group.NewService(us, groups, members, groupLogger)
+		gs = group.NewLoggingService(gs, groupLogger)
+	}
+
 	// Setup HTTP server handlers
 	mux := http.NewServeMux()
 	httpLogger := log.With(logger, "component", "http")
 	{
 		mux.Handle("/v1/users/", user.MakeHandler(us, httpLogger))
+		mux.Handle("/v1/groups/", group.MakeHandler(gs, httpLogger))
 	}
 	http.Handle("/", mux)
 
