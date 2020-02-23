@@ -6,9 +6,10 @@ import (
 )
 
 var (
-	userBucketKey       = []byte("iam-v1-users")
-	groupBucketKey      = []byte("iam-v1-groups")
-	membershipBucketKey = []byte("iam-v1-memberships")
+	userBucketKey            = []byte("iam-v1-users")
+	groupBucketKey           = []byte("iam-v1-groups")
+	membershipGroupBucketKey = []byte("iam-v1-memberships-group")
+	membershipUserBucketKey  = []byte("iam-v1-memberships-user")
 )
 
 // Database provides persistence for users, groups and policies
@@ -18,14 +19,19 @@ type Database struct {
 	db *bbolt.DB
 }
 
-// UserRepo returns a iam.UserRepository backed by db
+// UserRepo returns a iam.UserRepository backed by db.
 func (db *Database) UserRepo() iam.UserRepository {
 	return &userRepo{db}
 }
 
-// GroupRepo returns a iam.GroupRepository backed by db
+// GroupRepo returns a iam.GroupRepository backed by db.
 func (db *Database) GroupRepo() iam.GroupRepository {
 	return &groupRepo{db}
+}
+
+// MembershipRepo returns a iam.MembershipRepository backed by db.
+func (db *Database) MembershipRepo() iam.MembershipRepository {
+	return &memberRepo{db}
 }
 
 // Open opes the database file at path and returns
