@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/go-kit/kit/log"
 	"github.com/tierklinik-dobersberg/identity-server/iam"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/mutex"
 	"github.com/tierklinik-dobersberg/identity-server/services/user"
@@ -39,18 +40,24 @@ type service struct {
 	l       *mutex.Mutex
 	groups  iam.GroupRepository
 	members iam.MembershipRepository
+	log     log.Logger
 }
 
 // NewService returns a new service for managing account group memberships.
 // It depends on having access to the user management service as well as
 // a group repository for persisting changes.
-func NewService(us user.Service, groups iam.GroupRepository, members iam.MembershipRepository) Service {
-	return &service{
+func NewService(us user.Service, groups iam.GroupRepository, members iam.MembershipRepository, logger log.Logger) Service {
+	svc := &service{
 		users:   us,
 		l:       mutex.New(),
 		groups:  groups,
 		members: members,
+		log:     logger,
 	}
+
+	us.OnDelete(context.Background(), svc.userDeleted)
+
+	return svc
 }
 
 var errNotImplemented = errors.New("not yet implemented")
@@ -183,4 +190,36 @@ func (s *service) DeleteMember(ctx context.Context, grp iam.GroupURN, member iam
 	}
 
 	return nil
+}
+
+func (s *service) userDeleted(user iam.UserURN) {
+	s.l.Lock()
+	defer s.l.Unlock()
+
+	groups, err := s.members.Memberships(context.Background(), user)
+	if err != nil {
+		// TODO: we might have zombie users in that group now
+		// maybe retry?
+		s.log.Log(
+			"method", "userDeleted",
+			"user", user,
+			"err", err,
+			"msg", "Failed to get group memberships",
+		)
+		return
+	}
+
+	for _, g := range groups {
+		if err := s.members.DeleteMember(context.Background(), user, g); err != nil {
+			// TODO: we might have zombie users in that group now
+			// maybe retry?
+			s.log.Log(
+				"method", "userDeleted",
+				"user", user,
+				"group", g,
+				"err", err,
+				"msg", "Failed to remove user from group",
+			)
+		}
+	}
 }
