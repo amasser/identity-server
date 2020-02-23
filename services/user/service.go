@@ -261,7 +261,7 @@ func NewService(repo iam.UserRepository, authn authn.Service) Service {
 	}
 }
 
-var nextUniqueSubscriber int64 = 0
+var nextUniqueSubscriber int64
 
 func getUniqueSubscriberID() int64 {
 	return atomic.AddInt64(&nextUniqueSubscriber, 1)
