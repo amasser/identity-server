@@ -12,12 +12,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/tierklinik-dobersberg/identity-server/iam"
+	"github.com/tierklinik-dobersberg/identity-server/mocks"
 )
 
 var bg = context.Background()
 
-func setupServiceTestBed() (Service, *userRepoMock, *authnMock) {
-	a := &authnMock{}
+func setupServiceTestBed() (Service, *userRepoMock, *mocks.AuthnService) {
+	a := mocks.NewAuthnService()
 	r := &userRepoMock{}
 	l := log.NewNopLogger()
 	s := NewService(r, a)
