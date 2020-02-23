@@ -2,10 +2,10 @@ package inmem
 
 import (
 	"context"
-	"os"
 	"sync"
 
 	"github.com/tierklinik-dobersberg/identity-server/iam"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/common"
 )
 
 type groupRepo struct {
@@ -46,7 +46,7 @@ func (repo *groupRepo) Load(ctx context.Context, urn iam.GroupURN) (iam.Group, e
 		return g, ctx.Err()
 	}
 
-	return iam.Group{}, os.ErrNotExist
+	return iam.Group{}, common.NewNotFoundError("group")
 }
 
 func (repo *groupRepo) Get(ctx context.Context) ([]iam.Group, error) {

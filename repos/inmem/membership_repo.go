@@ -2,10 +2,10 @@ package inmem
 
 import (
 	"context"
-	"os"
 	"sync"
 
 	"github.com/tierklinik-dobersberg/identity-server/iam"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/common"
 )
 
 type membershipRepo struct {
@@ -73,7 +73,7 @@ func (repo *membershipRepo) DeleteMember(ctx context.Context, user iam.UserURN, 
 		return nil
 	}
 
-	return os.ErrNotExist
+	return common.NewNotFoundError("user membership")
 }
 
 func (repo *membershipRepo) Members(ctx context.Context, grp iam.GroupURN) ([]iam.UserURN, error) {

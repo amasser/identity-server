@@ -3,13 +3,14 @@ package bbolt
 import (
 	"context"
 	"encoding/json"
-	"os"
 
 	"github.com/tierklinik-dobersberg/identity-server/iam"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/common"
 	"go.etcd.io/bbolt"
 )
 
 var _ iam.UserRepository = &Database{}
+var errUserNotFound = common.NewNotFoundError("user")
 
 // Store impelements iam.UserRepository
 func (db *Database) Store(ctx context.Context, user iam.User) error {
@@ -46,7 +47,7 @@ func (db *Database) Load(ctx context.Context, urn iam.UserURN) (user iam.User, e
 	err = db.db.View(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket(userBucketKey)
 		if bucket == nil {
-			return os.ErrNotExist
+			return errUserNotFound
 		}
 
 		blob = bucket.Get([]byte(urn))
@@ -57,7 +58,7 @@ func (db *Database) Load(ctx context.Context, urn iam.UserURN) (user iam.User, e
 	}
 
 	if blob == nil {
-		err = os.ErrNotExist
+		err = errUserNotFound
 	} else {
 		err = json.Unmarshal(blob, &user)
 	}

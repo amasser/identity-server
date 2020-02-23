@@ -2,11 +2,13 @@ package inmem
 
 import (
 	"context"
-	"os"
 	"sync"
 
 	"github.com/tierklinik-dobersberg/identity-server/iam"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/common"
 )
+
+var errUserNotFound = common.NewNotFoundError("user")
 
 type userRepository struct {
 	l     sync.RWMutex
@@ -27,7 +29,7 @@ func (r *userRepository) Delete(ctx context.Context, urn iam.UserURN) error {
 	defer r.l.Unlock()
 
 	if _, ok := r.users[urn]; !ok {
-		return os.ErrNotExist
+		return errUserNotFound
 	}
 
 	delete(r.users, urn)
@@ -43,7 +45,7 @@ func (r *userRepository) Load(ctx context.Context, urn iam.UserURN) (iam.User, e
 		return u, nil
 	}
 
-	return iam.User{}, os.ErrNotExist
+	return iam.User{}, errUserNotFound
 }
 
 func (r *userRepository) Get(ctx context.Context) ([]iam.User, error) {
