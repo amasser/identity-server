@@ -16,7 +16,7 @@ type createUserResponse struct {
 	URN iam.GroupURN `json:"urn"`
 }
 
-func makeCreateUserEndpoint(s Service) endpoint.Endpoint {
+func makeCreateGroupEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createUserRequest)
 		urn, err := s.Create(ctx, req.Name, req.Comment)
@@ -31,15 +31,15 @@ type deleteGroupRequest struct {
 	URN iam.GroupURN
 }
 
-type deleteUserResponse struct{}
+type deleteGroupResponse struct{}
 
-func makeDeleteUserEndpoint(s Service) endpoint.Endpoint {
+func makeDeleteGroupEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(deleteGroupRequest)
 		if err := s.Delete(ctx, req.URN); err != nil {
 			return nil, err
 		}
-		return deleteUserResponse{}, nil
+		return deleteGroupResponse{}, nil
 	}
 }
 
@@ -62,9 +62,25 @@ func makeLoadGroupEndpoint(s Service) endpoint.Endpoint {
 	}
 }
 
+type getGroupsRequest struct{}
+type getGroupsResponse struct {
+	Groups []iam.Group `json:"groups"`
+}
+
+func makeGetGroupsEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		_ = request.(getGroupsRequest)
+		grps, err := s.Get(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return getGroupsResponse{Groups: grps}, nil
+	}
+}
+
 type updateGroupCommentRequest struct {
-	URN        iam.GroupURN
-	NewComment string `json:"comment"`
+	URN        iam.GroupURN `json:"-"`
+	NewComment string       `json:"comment"`
 }
 type updateGroupCommentResponse struct{}
 
@@ -85,7 +101,7 @@ type addMemberRequest struct {
 
 type addMemberResponse struct{}
 
-func makeAddMemberResponse(s Service) endpoint.Endpoint {
+func makeAddMemberEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(addMemberRequest)
 		if err := s.AddMember(ctx, req.Group, req.User); err != nil {
@@ -102,7 +118,7 @@ type deleteMemberRequest struct {
 
 type deleteMemberResponse struct{}
 
-func makeDeleteMemberResponse(s Service) endpoint.Endpoint {
+func makeDeleteMemberEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(deleteMemberRequest)
 		if err := s.DeleteMember(ctx, req.Group, req.User); err != nil {

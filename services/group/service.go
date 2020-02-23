@@ -13,25 +13,28 @@ import (
 
 // Service is the interface providing group management methods
 type Service interface {
+	// Get returns a list of all groups.
+	Get(ctx context.Context) ([]iam.Group, error)
+
 	// Create a new group with the given name and comment. Note that
 	// groups will always be created without any initial members.
-	// See AddMember for more information
+	// See AddMember for more information.
 	Create(ctx context.Context, groupName string, groupComment string) (iam.GroupURN, error)
 
-	// Delete an existing account group and cancel the membership of all users
+	// Delete an existing account group and cancel the membership of all users.
 	Delete(ctx context.Context, urn iam.GroupURN) error
 
 	// Load loads an existing account from the repository optionally including
 	// a list of members URNs.
 	Load(ctx context.Context, urn iam.GroupURN) (iam.Group, error)
 
-	// UpdateComment updates the comment of an account group
+	// UpdateComment updates the comment of an account group.
 	UpdateComment(ctx context.Context, urn iam.GroupURN, comment string) error
 
-	// AddMember adds a new memeber to the group
+	// AddMember adds a new memeber to the group.
 	AddMember(ctx context.Context, grp iam.GroupURN, memeber iam.UserURN) error
 
-	// DeleteMember deletes a member from the group
+	// DeleteMember deletes a member from the group.
 	DeleteMember(ctx context.Context, grp iam.GroupURN, member iam.UserURN) error
 }
 
@@ -63,6 +66,15 @@ func NewService(us user.Service, groups iam.GroupRepository, members iam.Members
 // ErrInvalidParameter is returned from the group management service if
 // invalid parameters are supplied
 var ErrInvalidParameter = common.NewInvalidArgumentError("invalid parameter")
+
+func (s *service) Get(ctx context.Context) ([]iam.Group, error) {
+	if !s.l.TryLock(ctx) {
+		return nil, ctx.Err()
+	}
+	defer s.l.Unlock()
+
+	return s.groups.Get(ctx)
+}
 
 func (s *service) Create(ctx context.Context, groupName string, groupComment string) (iam.GroupURN, error) {
 	if groupName == "" {

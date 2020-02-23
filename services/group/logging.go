@@ -21,6 +21,18 @@ func NewLoggingService(s Service, logger log.Logger) Service {
 	}
 }
 
+func (s *loggingService) Get(ctx context.Context) (grps []iam.Group, err error) {
+	defer func(begin time.Time) {
+		s.l.Log(
+			"method", "list_groups",
+			"groups", len(grps),
+			"took", time.Since(begin),
+			"err", err,
+		)
+	}(time.Now())
+	return s.Service.Get(ctx)
+}
+
 func (s *loggingService) Create(ctx context.Context, groupName, groupComment string) (urn iam.GroupURN, err error) {
 	defer func(begin time.Time) {
 		s.l.Log(
