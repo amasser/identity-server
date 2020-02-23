@@ -399,7 +399,7 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 
 func getURNFromVars(r *http.Request, key string) (iam.UserURN, error) {
 	vars := mux.Vars(r)
-	id, ok := vars["id"]
+	id, ok := vars[key]
 	if !ok {
 		return "", errBadRoute
 	}
