@@ -46,7 +46,7 @@ func (repo *membershipRepo) AddMember(ctx context.Context, user iam.UserURN, grp
 
 func (repo *membershipRepo) DeleteMember(ctx context.Context, user iam.UserURN, grp iam.GroupURN) error {
 	repo.rw.Lock()
-	defer repo.rw.RUnlock()
+	defer repo.rw.Unlock()
 
 	members := repo.members[grp]
 	foundMember := false

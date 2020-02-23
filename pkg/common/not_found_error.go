@@ -15,7 +15,7 @@ type NotFoundError struct {
 }
 
 func (nfe *NotFoundError) Error() string {
-	return fmt.Sprintf("Request %s not found", nfe.ResourceKind)
+	return fmt.Sprintf("Requested %s not found", nfe.ResourceKind)
 }
 
 // MarshalJSON implements the json.Marshaler interface and is
