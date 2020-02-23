@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"sync"
 	"testing"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/tierklinik-dobersberg/identity-server/iam"
 	"github.com/tierklinik-dobersberg/identity-server/mocks"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/common"
 )
 
 var bg = context.Background()
@@ -43,7 +43,7 @@ func TestService_CreateUser(t *testing.T) {
 			},
 		}
 
-		r.On("Load", iam.UserURN("urn:iam::user/1")).Once().Return(iam.User{}, os.ErrNotExist)
+		r.On("Load", iam.UserURN("urn:iam::user/1")).Once().Return(iam.User{}, common.NewNotFoundError("0"))
 		r.On("Store", expectedUser).Return(nil)
 		a.On("ImportAccount", "admin", "password", false).Once().Return(1, nil)
 
@@ -69,7 +69,7 @@ func TestService_CreateUser(t *testing.T) {
 
 		_, err := svc.CreateUser(bg, "admin", "password", nil)
 		assert.Error(t, err)
-		assert.True(t, os.IsExist(err))
+		assert.True(t, common.IsConflict(err))
 		r.AssertExpectations(t)
 	})
 
@@ -86,7 +86,7 @@ func TestService_CreateUser(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, "simulated", err.Error())
 
-		r.On("Load", iam.UserURN("urn:iam::user/3")).Once().Return(iam.User{}, os.ErrNotExist)
+		r.On("Load", iam.UserURN("urn:iam::user/3")).Once().Return(iam.User{}, common.NewNotFoundError("0"))
 		a.On("ImportAccount", "admin", "password", false).Once().Return(3, nil)
 		r.On("Store", mock.Anything).Once().Return(errors.New("simulated 2"))
 		a.On("ArchiveAccount", 3).Once().Return(nil)
@@ -275,10 +275,10 @@ func TestService_UpdateAttrs(t *testing.T) {
 		svc, r, _ := setupServiceTestBed()
 		urn := iam.UserURN("urn:iam::user/11")
 
-		r.On("Load", urn).Once().Return(iam.User{}, os.ErrNotExist)
+		r.On("Load", urn).Once().Return(iam.User{}, common.NewNotFoundError("0"))
 		err := svc.UpdateAttrs(bg, urn, map[string]interface{}{"new": "value"})
 		assert.Error(t, err)
-		assert.True(t, os.IsNotExist(err))
+		assert.True(t, common.IsNotFound(err))
 		r.AssertExpectations(t)
 	})
 
@@ -320,10 +320,10 @@ func TestService_SetAttr(t *testing.T) {
 		svc, r, _ := setupServiceTestBed()
 		urn := iam.UserURN("urn:iam::user/11")
 
-		r.On("Load", urn).Once().Return(iam.User{}, os.ErrNotExist)
+		r.On("Load", urn).Once().Return(iam.User{}, common.NewNotFoundError("0"))
 		err := svc.SetAttr(bg, urn, "key", "value")
 		assert.Error(t, err)
-		assert.True(t, os.IsNotExist(err))
+		assert.True(t, common.IsNotFound(err))
 		r.AssertExpectations(t)
 	})
 
@@ -388,10 +388,10 @@ func TestService_DeleteAttr(t *testing.T) {
 		svc, r, _ := setupServiceTestBed()
 		urn := iam.UserURN("urn:iam::user/11")
 
-		r.On("Load", urn).Once().Return(iam.User{}, os.ErrNotExist)
+		r.On("Load", urn).Once().Return(iam.User{}, common.NewNotFoundError("0"))
 		err := svc.DeleteAttr(bg, urn, "job")
 		assert.Error(t, err)
-		assert.True(t, os.IsNotExist(err))
+		assert.True(t, common.IsNotFound(err))
 		r.AssertExpectations(t)
 	})
 

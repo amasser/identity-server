@@ -4,7 +4,6 @@ package user
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"sync"
@@ -12,12 +11,13 @@ import (
 
 	"github.com/tierklinik-dobersberg/identity-server/iam"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/authn"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/common"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/mutex"
 )
 
 // ErrInvalidArgument is returned when an invalid argument is passed to
 // a Service method
-var ErrInvalidArgument = errors.New("invalid argument")
+var ErrInvalidArgument = common.NewInvalidArgumentError("invalid argument")
 
 // OnDeleteFunc is a callback function that is invoked when a user is deleted.
 // See Service.OnDelete() for more information.
@@ -87,9 +87,9 @@ func (s *service) CreateUser(ctx context.Context, username, password string, att
 
 	_, err = s.repo.Load(ctx, urn)
 	if err == nil {
-		return "", os.ErrExist
+		return "", common.NewConflictError("username")
 	}
-	if !os.IsNotExist(err) {
+	if !common.IsNotFound(err) && !os.IsNotExist(err) {
 		return "", err
 	}
 
