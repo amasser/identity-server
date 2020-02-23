@@ -2,11 +2,11 @@ package group
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/go-kit/kit/log"
 	"github.com/tierklinik-dobersberg/identity-server/iam"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/common"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/mutex"
 	"github.com/tierklinik-dobersberg/identity-server/services/user"
 )
@@ -60,11 +60,9 @@ func NewService(us user.Service, groups iam.GroupRepository, members iam.Members
 	return svc
 }
 
-var errNotImplemented = errors.New("not yet implemented")
-
 // ErrInvalidParameter is returned from the group management service if
 // invalid parameters are supplied
-var ErrInvalidParameter = errors.New("invalid parameter")
+var ErrInvalidParameter = common.NewInvalidArgumentError("invalid parameter")
 
 func (s *service) Create(ctx context.Context, groupName string, groupComment string) (iam.GroupURN, error) {
 	if groupName == "" {

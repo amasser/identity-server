@@ -3,7 +3,6 @@ package group
 import (
 	"context"
 	"errors"
-	"os"
 	"testing"
 
 	"github.com/go-kit/kit/log"
@@ -11,6 +10,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/tierklinik-dobersberg/identity-server/iam"
 	"github.com/tierklinik-dobersberg/identity-server/mocks"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/common"
 	"github.com/tierklinik-dobersberg/identity-server/services/user"
 )
 
@@ -240,10 +240,10 @@ func TestService_AddMember(t *testing.T) {
 		s := setupTestBed()
 
 		s.groups.On("Load", iam.GroupURN("urn:iam::group/devs")).Once().Return(iam.Group{}, nil)
-		s.users.On("LoadUser", iam.UserURN("urn:iam::user/10")).Once().Return(iam.User{}, os.ErrNotExist)
+		s.users.On("LoadUser", iam.UserURN("urn:iam::user/10")).Once().Return(iam.User{}, &common.NotFoundError{})
 
 		err := s.AddMember(testCtx, "urn:iam::group/devs", "urn:iam::user/10")
-		assert.True(t, os.IsNotExist(err))
+		assert.True(t, common.IsNotFound(err))
 		s.AssertExpectations(t)
 	})
 
@@ -279,9 +279,9 @@ func TestService_DeleteMember(t *testing.T) {
 		t.Parallel()
 		s := setupTestBed()
 
-		s.groups.On("Load", iam.GroupURN("urn:iam::group/devs")).Return(iam.Group{}, os.ErrNotExist)
+		s.groups.On("Load", iam.GroupURN("urn:iam::group/devs")).Return(iam.Group{}, common.NewNotFoundError(""))
 		err := s.DeleteMember(testCtx, "urn:iam::group/devs", "urn:iam::user/10")
-		assert.True(t, os.IsNotExist(err))
+		assert.True(t, common.IsNotFound(err))
 		s.AssertExpectations(t)
 	})
 
