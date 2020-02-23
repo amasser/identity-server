@@ -1,9 +1,14 @@
 package bbolt
 
-import "go.etcd.io/bbolt"
+import (
+	"github.com/tierklinik-dobersberg/identity-server/iam"
+	"go.etcd.io/bbolt"
+)
 
 var (
-	userBucketKey = []byte("iam-v1-users")
+	userBucketKey       = []byte("iam-v1-users")
+	groupBucketKey      = []byte("iam-v1-groups")
+	membershipBucketKey = []byte("iam-v1-memberships")
 )
 
 // Database provides persistence for users, groups and policies
@@ -11,6 +16,16 @@ var (
 // interfaces.
 type Database struct {
 	db *bbolt.DB
+}
+
+// UserRepo returns a iam.UserRepository backed by db
+func (db *Database) UserRepo() iam.UserRepository {
+	return &userRepo{db}
+}
+
+// GroupRepo returns a iam.GroupRepository backed by db
+func (db *Database) GroupRepo() iam.GroupRepository {
+	return &groupRepo{db}
 }
 
 // Open opes the database file at path and returns

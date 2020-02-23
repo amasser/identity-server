@@ -14,10 +14,19 @@ import (
 	"go.etcd.io/bbolt"
 )
 
+func openUserRepo(f string) (*userRepo, error) {
+	db, err := Open(f)
+	if err != nil {
+		return nil, err
+	}
+
+	return db.UserRepo().(*userRepo), nil
+}
+
 func Test_Store(t *testing.T) {
 	f, cleanup := getTempDb()
 	defer cleanup()
-	db, err := Open(f)
+	db, err := openUserRepo(f)
 	require.NoError(t, err)
 
 	user := iam.User{
@@ -127,10 +136,10 @@ var existingUser = iam.User{
 	},
 }
 
-func getTempWithUser(t *testing.T) (*Database, func()) {
+func getTempWithUser(t *testing.T) (*userRepo, func()) {
 	s, c := getTempDb()
 
-	db, err := Open(s)
+	db, err := openUserRepo(s)
 	require.NoError(t, err)
 
 	blob, _ := json.Marshal(existingUser)

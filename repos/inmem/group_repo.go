@@ -33,6 +33,10 @@ func (repo *groupRepo) Delete(ctx context.Context, urn iam.GroupURN) error {
 	repo.rw.Lock()
 	defer repo.rw.Unlock()
 
+	if _, ok := repo.groups[urn]; !ok {
+		return common.NewNotFoundError("group")
+	}
+
 	delete(repo.groups, urn)
 
 	return ctx.Err()

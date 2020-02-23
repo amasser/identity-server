@@ -9,18 +9,22 @@ import (
 	"go.etcd.io/bbolt"
 )
 
-var _ iam.UserRepository = &Database{}
+var _ iam.UserRepository = &userRepo{}
 var errUserNotFound = common.NewNotFoundError("user")
 
+type userRepo struct {
+	*Database
+}
+
 // Store impelements iam.UserRepository
-func (db *Database) Store(ctx context.Context, user iam.User) error {
+func (db *userRepo) Store(ctx context.Context, user iam.User) error {
+	blob, err := json.Marshal(user)
+	if err != nil {
+		return err
+	}
+
 	return db.db.Update(func(tx *bbolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(userBucketKey)
-		if err != nil {
-			return err
-		}
-
-		blob, err := json.Marshal(user)
 		if err != nil {
 			return err
 		}
@@ -30,7 +34,7 @@ func (db *Database) Store(ctx context.Context, user iam.User) error {
 }
 
 // Delete implements iam.UserRepository
-func (db *Database) Delete(ctx context.Context, urn iam.UserURN) error {
+func (db *userRepo) Delete(ctx context.Context, urn iam.UserURN) error {
 	return db.db.Update(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket(userBucketKey)
 		if bucket == nil {
@@ -42,7 +46,7 @@ func (db *Database) Delete(ctx context.Context, urn iam.UserURN) error {
 }
 
 // Load implements iam.UserRepository
-func (db *Database) Load(ctx context.Context, urn iam.UserURN) (user iam.User, err error) {
+func (db *userRepo) Load(ctx context.Context, urn iam.UserURN) (user iam.User, err error) {
 	var blob []byte
 	err = db.db.View(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket(userBucketKey)
@@ -67,7 +71,7 @@ func (db *Database) Load(ctx context.Context, urn iam.UserURN) (user iam.User, e
 }
 
 // Get implements iam.UserRepository
-func (db *Database) Get(ctx context.Context) (users []iam.User, err error) {
+func (db *userRepo) Get(ctx context.Context) (users []iam.User, err error) {
 	var blobs [][]byte
 	err = db.db.View(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket(userBucketKey)

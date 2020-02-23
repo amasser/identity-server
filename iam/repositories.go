@@ -31,10 +31,10 @@ type GroupRepository interface {
 	Store(ctx context.Context, group Group) error
 
 	// Delete deletes an existing account group. Implementations tracking
-	// user-group assignments should clean them up as well. It is not required
-	// for the group to be deleted to exist. If it does not exist, implementations
-	// should either return nil or common.NotFoundError. Any other error will be treated
-	// as something else and returned back to the user.
+	// user-group assignments should clean them up as well. If it does not
+	// exist, implementations should either return nil or common.NotFoundError.
+	// Any other error will be treated as something else and returned back
+	// to the user.
 	Delete(ctx context.Context, urn GroupURN) error
 
 	// Load loads the account group from the persistent storage and returns it.
