@@ -39,6 +39,10 @@ func IsConflict(err error) bool {
 		return false
 	}
 
+	if _, ok := err.(*ConflictError); ok {
+		return true
+	}
+
 	return errors.Is(err, &ConflictError{})
 }
 

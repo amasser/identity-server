@@ -39,6 +39,10 @@ func IsNotFound(err error) bool {
 		return false
 	}
 
+	if _, ok := err.(*NotFoundError); ok {
+		return true
+	}
+
 	return errors.Is(err, &NotFoundError{})
 }
 
