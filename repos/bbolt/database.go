@@ -1,6 +1,7 @@
 package bbolt
 
 import (
+	"github.com/go-kit/kit/log"
 	"github.com/tierklinik-dobersberg/identity-server/iam"
 	"go.etcd.io/bbolt"
 )
@@ -17,6 +18,7 @@ var (
 // interfaces.
 type Database struct {
 	db *bbolt.DB
+	l  log.Logger
 }
 
 // UserRepo returns a iam.UserRepository backed by db.
@@ -37,10 +39,18 @@ func (db *Database) MembershipRepo() iam.MembershipRepository {
 // Open opes the database file at path and returns
 // a new Database instance
 func Open(path string) (*Database, error) {
+	return OpenWithLogger(path, log.NewNopLogger())
+}
+
+// OpenWithLogger is like Open but allows specifying a logger to use
+func OpenWithLogger(path string, l log.Logger) (*Database, error) {
 	db, err := bbolt.Open(path, 0600, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Database{db: db}, nil
+	return &Database{
+		db: db,
+		l:  l,
+	}, nil
 }

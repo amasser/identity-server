@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/go-kit/kit/log/level"
 	"github.com/tierklinik-dobersberg/identity-server/iam"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/common"
 	"go.etcd.io/bbolt"
@@ -83,6 +84,12 @@ func (db *memberRepo) DeleteMember(ctx context.Context, user iam.UserURN, group 
 		groupBucket := tx.Bucket(membershipGroupBucketKey)
 
 		if userBucket == nil || groupBucket == nil {
+			level.Debug(db.l).Log(
+				"method", "DeleteMember",
+				"user", user,
+				"group", group,
+				"msg", "Found empty buckets",
+			)
 			return errNoMember
 		}
 
@@ -90,6 +97,12 @@ func (db *memberRepo) DeleteMember(ctx context.Context, user iam.UserURN, group 
 		userBlob := userBucket.Get(userKey)
 
 		if groupBlob == nil || userBlob == nil {
+			level.Debug(db.l).Log(
+				"method", "DeleteMember",
+				"user", user,
+				"group", group,
+				"msg", "either group or user entry not found",
+			)
 			return errNoMember
 		}
 
@@ -100,6 +113,12 @@ func (db *memberRepo) DeleteMember(ctx context.Context, user iam.UserURN, group 
 			}
 
 			if !allMembers.Delete(user) {
+				level.Debug(db.l).Log(
+					"method", "DeleteMember",
+					"user", user,
+					"group", group,
+					"msg", "user not part of member list",
+				)
 				return errNoMember
 			}
 			blob, err := json.Marshal(allMembers)
@@ -109,6 +128,14 @@ func (db *memberRepo) DeleteMember(ctx context.Context, user iam.UserURN, group 
 			if err := groupBucket.Put(groupKey, blob); err != nil {
 				return err
 			}
+
+			level.Debug(db.l).Log(
+				"method", "DeleteMember",
+				"user", user,
+				"group", group,
+				"members", len(allMembers),
+				"msg", "updated member list",
+			)
 		}
 
 		{
@@ -119,6 +146,12 @@ func (db *memberRepo) DeleteMember(ctx context.Context, user iam.UserURN, group 
 
 			if !allGroups.Delete(group) {
 				// TODO(ppacher): this acutally means we have an inconsistent data set
+				level.Debug(db.l).Log(
+					"method", "DeleteMember",
+					"user", user,
+					"group", group,
+					"msg", "group not found in user groups",
+				)
 				return errNoMember
 			}
 			blob, err := json.Marshal(allGroups)
@@ -128,8 +161,22 @@ func (db *memberRepo) DeleteMember(ctx context.Context, user iam.UserURN, group 
 			if err := userBucket.Put(userKey, blob); err != nil {
 				return err
 			}
+
+			level.Debug(db.l).Log(
+				"method", "DeleteMember",
+				"user", user,
+				"group", group,
+				"groups", len(allGroups),
+				"msg", "updated group list",
+			)
 		}
 
+		level.Debug(db.l).Log(
+			"method", "DeleteMember",
+			"user", user,
+			"group", group,
+			"msg", "deleted user from group",
+		)
 		return nil
 	})
 }
@@ -192,7 +239,7 @@ func (ul userList) Has(urn iam.UserURN) bool {
 func (ul *userList) Delete(urn iam.UserURN) bool {
 	for i, u := range *ul {
 		if u == urn {
-			*ul = append((*ul)[i:], (*ul)[i+1:]...)
+			*ul = append((*ul)[:i], (*ul)[i+1:]...)
 			return true
 		}
 	}
@@ -214,7 +261,7 @@ func (gl groupList) Has(urn iam.GroupURN) bool {
 func (gl *groupList) Delete(urn iam.GroupURN) bool {
 	for i, g := range *gl {
 		if g == urn {
-			*gl = append((*gl)[i:], (*gl)[i+1:]...)
+			*gl = append((*gl)[:i], (*gl)[i+1:]...)
 			return true
 		}
 	}

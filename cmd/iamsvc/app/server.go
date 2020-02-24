@@ -39,6 +39,7 @@ func NewIAMCommand() *cobra.Command {
 func runMain(cmd *cobra.Command, args []string) error {
 	var logger log.Logger
 	logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stderr))
+	//logger = logrusLogger.NewLogrusLogger(logrus.New())
 	logger = log.With(logger, "ts", log.DefaultTimestampUTC)
 
 	dbPath, err := cmd.Flags().GetString("database")
@@ -48,7 +49,7 @@ func runMain(cmd *cobra.Command, args []string) error {
 
 	var db *bbolt.Database
 	if dbPath != ":memory:" {
-		db, err = bbolt.Open(dbPath)
+		db, err = bbolt.OpenWithLogger(dbPath, log.With(logger, "component", "bbolt"))
 		if err != nil {
 			return err
 		}
