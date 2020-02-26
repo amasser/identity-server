@@ -26,7 +26,7 @@ func (m *GroupRepository) Load(_ context.Context, urn iam.GroupURN) (iam.Group, 
 
 func (m *GroupRepository) Get(_ context.Context) ([]iam.Group, error) {
 	args := m.Called()
-	return args.Get(0).([]iam.Group), args.Error(0)
+	return args.Get(0).([]iam.Group), args.Error(1)
 }
 
 func NewGroupRepository() *GroupRepository {

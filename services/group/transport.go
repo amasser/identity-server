@@ -88,7 +88,7 @@ func decodeGetGroupsRequest(ctx context.Context, req *http.Request) (interface{}
 }
 
 func decodeCreateGroupRequest(ctx context.Context, req *http.Request) (interface{}, error) {
-	var request createUserRequest
+	var request createGroupRequest
 	if err := json.NewDecoder(req.Body).Decode(&request); err != nil {
 		return nil, err
 	}

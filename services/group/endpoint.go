@@ -8,23 +8,23 @@ import (
 	"github.com/tierklinik-dobersberg/identity-server/iam"
 )
 
-type createUserRequest struct {
+type createGroupRequest struct {
 	Name    string `json:"name"`
 	Comment string `json:"comment"`
 }
 
-type createUserResponse struct {
+type createGroupResponse struct {
 	URN iam.GroupURN `json:"urn"`
 }
 
 func makeCreateGroupEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(createUserRequest)
+		req := request.(createGroupRequest)
 		urn, err := s.Create(ctx, req.Name, req.Comment)
 		if err != nil {
 			return nil, err
 		}
-		return createUserResponse{URN: urn}, nil
+		return createGroupResponse{URN: urn}, nil
 	}
 }
 

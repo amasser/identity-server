@@ -16,6 +16,25 @@ import (
 
 var testCtx = context.Background()
 
+func TestService_Get(t *testing.T) {
+	s := setupTestBed()
+
+	expectedGroup := iam.Group{
+		ID:      "urn:iam::group/admins",
+		Comment: "some comment",
+		Name:    "admins",
+	}
+
+	s.groups.On("Get").Return([]iam.Group{
+		expectedGroup,
+	}, nil)
+
+	grps, err := s.Get(testCtx)
+	assert.NoError(t, err)
+	assert.Len(t, grps, 1)
+	assert.Equal(t, expectedGroup, grps[0])
+}
+
 func TestService_Create(t *testing.T) {
 	t.Run("Invalid name", func(t *testing.T) {
 		t.Parallel()
