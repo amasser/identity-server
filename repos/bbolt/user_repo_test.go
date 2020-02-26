@@ -3,9 +3,6 @@ package bbolt
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
-	"log"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,7 +11,7 @@ import (
 	"go.etcd.io/bbolt"
 )
 
-func openUserRepo(f string) (*userRepo, error) {
+func testOpenUserRepo(f string) (*userRepo, error) {
 	db, err := Open(f)
 	if err != nil {
 		return nil, err
@@ -26,7 +23,7 @@ func openUserRepo(f string) (*userRepo, error) {
 func Test_Store(t *testing.T) {
 	f, cleanup := getTempDb()
 	defer cleanup()
-	db, err := openUserRepo(f)
+	db, err := testOpenUserRepo(f)
 	require.NoError(t, err)
 
 	user := iam.User{
@@ -81,7 +78,7 @@ func Test_Store(t *testing.T) {
 }
 
 func Test_Delete(t *testing.T) {
-	db, cleanup := getTempWithUser(t)
+	db, cleanup := getTempUserRepoWithData(t)
 	defer cleanup()
 
 	assert.NoError(t, db.Delete(context.Background(), "urn:iam::user/10"))
@@ -95,12 +92,12 @@ func Test_Delete(t *testing.T) {
 }
 
 func Test_Load(t *testing.T) {
-	db, cleanup := getTempWithUser(t)
+	db, cleanup := getTempUserRepoWithData(t)
 	defer cleanup()
 
 	u, err := db.Load(context.Background(), "urn:iam::user/10")
 	assert.NoError(t, err)
-	assert.Equal(t, existingUser, u)
+	assert.Equal(t, testExistingUser, u)
 
 	u, err = db.Load(context.Background(), "urn:iam::user/100")
 	assert.Error(t, err)
@@ -108,51 +105,10 @@ func Test_Load(t *testing.T) {
 }
 
 func Test_Get(t *testing.T) {
-	db, cleanup := getTempWithUser(t)
+	db, cleanup := getTempUserRepoWithData(t)
 	defer cleanup()
 
 	list, err := db.Get(context.Background())
 	assert.NoError(t, err)
-	assert.Equal(t, []iam.User{existingUser}, list)
-}
-
-func getTempDb() (string, func()) {
-	file, err := ioutil.TempFile("", "unit-test-db-*.db")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return file.Name(), func() {
-		os.Remove(file.Name())
-	}
-}
-
-var existingUser = iam.User{
-	AccountID: 10,
-	Username:  "admin",
-	ID:        "urn:iam::user/10",
-	Attributes: map[string]interface{}{
-		"job": "developer",
-	},
-}
-
-func getTempWithUser(t *testing.T) (*userRepo, func()) {
-	s, c := getTempDb()
-
-	db, err := openUserRepo(s)
-	require.NoError(t, err)
-
-	blob, _ := json.Marshal(existingUser)
-
-	err = db.db.Update(func(tx *bbolt.Tx) error {
-		b, err := tx.CreateBucket(userBucketKey)
-		if err != nil {
-			return err
-		}
-
-		return b.Put([]byte("urn:iam::user/10"), blob)
-	})
-	require.NoError(t, err)
-
-	return db, c
+	assert.Equal(t, []iam.User{testExistingUser}, list)
 }
