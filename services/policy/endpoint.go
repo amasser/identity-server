@@ -70,6 +70,25 @@ func makeUpdatePolicyEndpoint(s Service) endpoint.Endpoint {
 	}
 }
 
+type loadPolicyRequest struct {
+	URN iam.PolicyURN
+}
+type loadPolicyResponse struct {
+	iam.Policy
+}
+
+func makeLoadPolicyEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(loadPolicyRequest)
+		p, err := s.Load(ctx, req.URN)
+		if err != nil {
+			return nil, err
+		}
+
+		return loadPolicyResponse{p}, nil
+	}
+}
+
 type listPoliciesRequest struct{}
 type listPoliciesResponse struct {
 	Policies []iam.Policy `json:"policies"`

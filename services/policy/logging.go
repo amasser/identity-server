@@ -52,6 +52,19 @@ func (l *loggingService) Delete(ctx context.Context, urn iam.PolicyURN) (err err
 	return l.Service.Delete(ctx, urn)
 }
 
+func (l *loggingService) Load(ctx context.Context, urn iam.PolicyURN) (p iam.Policy, err error) {
+	defer func(begin time.Time) {
+		l.l.Log(
+			"method", "load_policy",
+			"took", time.Since(begin),
+			"urn", urn,
+			"err", err,
+		)
+	}(time.Now())
+
+	return l.Service.Load(ctx, urn)
+}
+
 func (l *loggingService) Update(ctx context.Context, urn iam.PolicyURN, p iam.Policy) (err error) {
 	defer func(begin time.Time) {
 		l.l.Log(

@@ -16,6 +16,9 @@ type Service interface {
 	// Delete deletes a policy.
 	Delete(ctx context.Context, urn iam.PolicyURN) error
 
+	// Load loads the policy with the given URN.
+	Load(ctx context.Context, urn iam.PolicyURN) (iam.Policy, error)
+
 	// Update updates an existing policy.
 	Update(ctx context.Context, urn iam.PolicyURN, p iam.Policy) error
 
@@ -50,6 +53,15 @@ func (s *service) Delete(ctx context.Context, urn iam.PolicyURN) error {
 	defer s.m.Unlock()
 
 	return s.repo.Delete(ctx, urn)
+}
+
+func (s *service) Load(ctx context.Context, urn iam.PolicyURN) (iam.Policy, error) {
+	if !s.m.TryLock(ctx) {
+		return iam.Policy{}, ctx.Err()
+	}
+	defer s.m.Unlock()
+
+	return s.repo.Load(ctx, urn)
 }
 
 func (s *service) Update(ctx context.Context, urn iam.PolicyURN, p iam.Policy) error {
