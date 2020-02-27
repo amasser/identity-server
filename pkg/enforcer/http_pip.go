@@ -26,7 +26,7 @@ func NewHTTPInfoPoint(url string, opts ...HTTPInfoPointOption) *HTTPInfoPoint {
 	return pip
 }
 
-// WithClient configures the HTTP client to use
+// WithClient configures the HTTP client to use.
 func WithClient(cli *http.Client) HTTPInfoPointOption {
 	return func(p *HTTPInfoPoint) {
 		p.cli = cli

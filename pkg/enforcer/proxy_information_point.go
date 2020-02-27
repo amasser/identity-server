@@ -13,7 +13,7 @@ type ProxyInfoPoint struct {
 	points map[ResourceMatcher]InfoPoint
 }
 
-// NewProxyInfoPoint returns a new proxy information point.
+// NewProxyInfoPoint returns a new proxy policy information point.
 func NewProxyInfoPoint() *ProxyInfoPoint {
 	return &ProxyInfoPoint{
 		points: make(map[ResourceMatcher]InfoPoint),

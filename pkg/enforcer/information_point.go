@@ -25,13 +25,13 @@ type ResourceMatcher interface {
 // ResourceMatcher using a simple function.
 type ResourceMatcherFunc func(r string) bool
 
-// Match implements ResourceMatcher and simply calls rmf
+// Match implements ResourceMatcher and simply calls rmf.
 func (rmf ResourceMatcherFunc) Match(r string) bool {
 	return rmf(r)
 }
 
 // RegexpResourceMatcher implements ResourceMatcher by appliying a
-// regular expression against the resource
+// regular expression against the resource.
 type RegexpResourceMatcher struct {
 	r *regexp.Regexp
 }
@@ -47,7 +47,7 @@ func NewRegexpResourceMatcher(r string) (*RegexpResourceMatcher, error) {
 	return &RegexpResourceMatcher{reg}, nil
 }
 
-// Match implements ResourceMatcher
+// Match implements ResourceMatcher.
 func (matcher *RegexpResourceMatcher) Match(resource string) bool {
 	return matcher.r.Match([]byte(resource))
 }
