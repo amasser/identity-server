@@ -6,10 +6,66 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/transport"
+	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 	"github.com/tierklinik-dobersberg/identity-server/iam"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/common"
 )
+
+// MakeHandler returns a http.Handler for the policy management service.
+func MakeHandler(s Service, logger log.Logger) http.Handler {
+	opts := []kithttp.ServerOption{
+		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
+		kithttp.ServerErrorEncoder(kithttp.DefaultErrorEncoder),
+	}
+
+	createPolicyHandler := kithttp.NewServer(
+		makeCreatePolicyEndpoint(s),
+		decodeCreatePolicyRequest,
+		kithttp.EncodeJSONResponse,
+		opts...,
+	)
+
+	deletePolicyHandler := kithttp.NewServer(
+		makeDeletePolicyEndpoint(s),
+		decodeDeletePolicyRequest,
+		kithttp.EncodeJSONResponse,
+		opts...,
+	)
+
+	loadPolicyHandler := kithttp.NewServer(
+		makeLoadPolicyEndpoint(s),
+		decodeLoadPolicyRequest,
+		kithttp.EncodeJSONResponse,
+		opts...,
+	)
+
+	updatePolicyHandler := kithttp.NewServer(
+		makeUpdatePolicyEndpoint(s),
+		decodeUpdatePolicyRequest,
+		kithttp.EncodeJSONResponse,
+		opts...,
+	)
+
+	listPoliciesHandler := kithttp.NewServer(
+		makeListPoliciesEndpoint(s),
+		decodeListPoliciesRequest,
+		kithttp.EncodeJSONResponse,
+		opts...,
+	)
+
+	r := mux.NewRouter()
+
+	r.Handle("/v1/policies/", listPoliciesHandler).Methods("GET")
+	r.Handle("/v1/policies/", createPolicyHandler).Methods("POST")
+	r.Handle("/v1/policies/{id}", loadPolicyHandler).Methods("GET")
+	r.Handle("/v1/policies/{id}", updatePolicyHandler).Methods("PUT")
+	r.Handle("/v1/policies/{id}", deletePolicyHandler).Methods("DELETE")
+
+	return r
+}
 
 func decodeCreatePolicyRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	var req createPolicyRequest
@@ -28,6 +84,15 @@ func decodeDeletePolicyRequest(ctx context.Context, r *http.Request) (interface{
 	}
 
 	return deletePolicyRequest{urn}, nil
+}
+
+func decodeLoadPolicyRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	urn, err := getPolicyURN(r, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	return loadPolicyRequest{urn}, nil
 }
 
 func decodeUpdatePolicyRequest(ctx context.Context, r *http.Request) (interface{}, error) {
