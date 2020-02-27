@@ -7,6 +7,7 @@ require (
 	github.com/gorilla/mux v1.7.4
 	github.com/keratin/authn-go v1.1.0
 	github.com/kr/pretty v0.2.0 // indirect
+	github.com/ory/ladon v1.1.0
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/objx v0.2.0 // indirect

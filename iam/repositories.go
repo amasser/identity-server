@@ -59,3 +59,20 @@ type MembershipRepository interface {
 	// Members returns a list or users that belong to group
 	Members(ctx context.Context, group GroupURN) ([]UserURN, error)
 }
+
+// PolicyRepository persists access and permission policies.
+type PolicyRepository interface {
+	// Store stores a policy an overwrites an existing one
+	// if necassary.
+	Store(ctx context.Context, policy Policy) error
+
+	// Delete deletes an existing policy. If the given policy
+	// does not exist common.NotFoundError should be returned.
+	Delete(ctx context.Context, urn PolicyURN) error
+
+	// Load loads the policy identified by URN from storage.
+	Load(ctx context.Context, urn PolicyURN) (Policy, error)
+
+	// Get returns a list of all policies stored.
+	Get(ctx context.Context) ([]Policy, error)
+}
