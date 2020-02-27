@@ -11,6 +11,7 @@ var (
 	groupBucketKey           = []byte("iam-v1-groups")
 	membershipGroupBucketKey = []byte("iam-v1-memberships-group")
 	membershipUserBucketKey  = []byte("iam-v1-memberships-user")
+	policyBucketKey          = []byte("iam-v1-policy")
 )
 
 // Database provides persistence for users, groups and policies
@@ -34,6 +35,11 @@ func (db *Database) GroupRepo() iam.GroupRepository {
 // MembershipRepo returns a iam.MembershipRepository backed by db.
 func (db *Database) MembershipRepo() iam.MembershipRepository {
 	return &memberRepo{db}
+}
+
+// PolicyRepo returns a iam.PolicyRepository backed by db.
+func (db *Database) PolicyRepo() iam.PolicyRepository {
+	return &policyRepo{db}
 }
 
 // Open opes the database file at path and returns
