@@ -57,3 +57,10 @@ func (r *policyRepo) Get(ctx context.Context) ([]iam.Policy, error) {
 
 	return policies, nil
 }
+
+// NewPolicyRepository returns a new in-memory policy repository.
+func NewPolicyRepository() iam.PolicyRepository {
+	return &policyRepo{
+		m: make(map[iam.PolicyURN]iam.Policy),
+	}
+}

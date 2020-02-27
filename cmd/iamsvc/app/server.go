@@ -14,6 +14,7 @@ import (
 	"github.com/tierklinik-dobersberg/identity-server/repos/bbolt"
 	"github.com/tierklinik-dobersberg/identity-server/repos/inmem"
 	"github.com/tierklinik-dobersberg/identity-server/services/group"
+	"github.com/tierklinik-dobersberg/identity-server/services/policy"
 	"github.com/tierklinik-dobersberg/identity-server/services/user"
 )
 
@@ -82,6 +83,15 @@ func runMain(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	var policies iam.PolicyRepository
+	{
+		if db == nil {
+			policies = inmem.NewPolicyRepository()
+		} else {
+			policies = db.PolicyRepo()
+		}
+	}
+
 	// Create authn client service
 	var as authn.Service
 	{
@@ -95,18 +105,26 @@ func runMain(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Create user management service
+	// User management service
 	var us user.Service
 	{
 		us = user.NewService(users, as)
 		us = user.NewLoggingService(log.With(logger, "component", "user"), us)
 	}
 
+	//  Group management service
 	var gs group.Service
 	{
 		groupLogger := log.With(logger, "component", "group")
 		gs = group.NewService(us, groups, members, groupLogger)
 		gs = group.NewLoggingService(gs, groupLogger)
+	}
+
+	// Policy management service
+	var ps policy.Service
+	{
+		ps = policy.NewService(policies)
+		ps = policy.NewLoggingService(log.With(logger, "component", "policy"), ps)
 	}
 
 	// Setup HTTP server handlers
@@ -115,6 +133,7 @@ func runMain(cmd *cobra.Command, args []string) error {
 	{
 		mux.Handle("/v1/users/", user.MakeHandler(us, httpLogger))
 		mux.Handle("/v1/groups/", group.MakeHandler(gs, httpLogger))
+		mux.Handle("/v1/policies/", policy.MakeHandler(ps, httpLogger))
 	}
 	http.Handle("/", mux)
 
