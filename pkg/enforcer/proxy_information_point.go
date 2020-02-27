@@ -3,8 +3,6 @@ package enforcer
 import (
 	"context"
 	"sync"
-
-	"github.com/tierklinik-dobersberg/identity-server/pkg/common"
 )
 
 // ProxyInfoPoint proxies policy information requests
@@ -43,5 +41,5 @@ func (pip *ProxyInfoPoint) GetResourceContext(ctx context.Context, resource stri
 		}
 	}
 
-	return nil, common.NewNotFoundError("resource type")
+	return nil, nil
 }
