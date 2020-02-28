@@ -19,6 +19,7 @@ func MakeHandler(s Service, logger log.Logger) http.Handler {
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
 		kithttp.ServerErrorEncoder(kithttp.DefaultErrorEncoder),
+		kithttp.ServerBefore(kithttp.PopulateRequestContext),
 	}
 
 	createPolicyHandler := kithttp.NewServer(
