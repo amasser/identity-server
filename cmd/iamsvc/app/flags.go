@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/authn"
+	"gopkg.in/square/go-jose.v2/jwt"
 )
 
 func addHTTPTransportFlags(flags *pflag.FlagSet) {
@@ -62,7 +63,7 @@ func getAuthnConfig(cmd *cobra.Command) (authn.Config, error) {
 	}
 
 	return authn.Config{
-		Audience:           audience,
+		Audiences:          jwt.Audience{audience},
 		PrivateBaseAddress: server,
 		Password:           password,
 		Username:           user,
