@@ -29,6 +29,11 @@ type FileTokenStore struct {
 	path string
 }
 
+// NewFileTokenStore returns a new file based token store.
+func NewFileTokenStore(path string) *FileTokenStore {
+	return &FileTokenStore{path}
+}
+
 // Store implements TokenStoreer and persists the token in the
 // local filesystem.
 func (fs *FileTokenStore) Store(token string) error {
