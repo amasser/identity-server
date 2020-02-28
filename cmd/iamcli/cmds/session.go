@@ -11,7 +11,9 @@ import (
 var tokenStore session.TokenStore
 
 func init() {
-	RootCommand.PersistentFlags().StringP("access-token", "t", "", "Access token to use. Can either be a file path or an environment variable prefixed with 'env:'")
+	RootCommand.PersistentFlags().StringP("access-token", "t", "", `AuthN JWT access token used to authenticate against IAM.
+Can either be a file path or an environment variable prefixed
+with 'env:'. For example, --access-token env:TOKEN`)
 }
 
 func initTokenStore(cmd *cobra.Command) error {
