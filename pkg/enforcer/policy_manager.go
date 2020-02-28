@@ -32,7 +32,7 @@ func (*PolicyManager) Update(ladon.Policy) error {
 }
 
 // Delete implements ladon.Manager but does nothing.
-func (*PolicyManager) Delete(ladon.Policy) error {
+func (*PolicyManager) Delete(string) error {
 	return common.ErrNotImplemented
 }
 
@@ -69,8 +69,8 @@ func (p *PolicyManager) GetAll(limit, offset int64) (ladon.Policies, error) {
 	return policies, nil
 }
 
-// FindRequestCandiates returns all available policies.
-func (p *PolicyManager) FindRequestCandiates(r *ladon.Request) (ladon.Policies, error) {
+// FindRequestCandidates returns all available policies.
+func (p *PolicyManager) FindRequestCandidates(r *ladon.Request) (ladon.Policies, error) {
 	return p.GetAll(0, 0)
 }
 
