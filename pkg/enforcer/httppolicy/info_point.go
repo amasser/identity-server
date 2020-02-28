@@ -1,24 +1,26 @@
-package enforcer
+package httppolicy
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/tierklinik-dobersberg/identity-server/pkg/enforcer"
 )
 
-// HTTPInfoPoint implements a HTTP based Policy Information Point (PIP).
-type HTTPInfoPoint struct {
+// InfoPoint implements a HTTP based Policy Information Point (PIP).
+type InfoPoint struct {
 	url string
 	cli *http.Client
 }
 
-// HTTPInfoPointOption is an option used when creating a HTTP PIP.
-type HTTPInfoPointOption func(p *HTTPInfoPoint)
+// InfoPointOption is an option used when creating a HTTP PIP.
+type InfoPointOption func(p *InfoPoint)
 
-// NewHTTPInfoPoint returns a HTTP based Policy Information Point (PIP).
-func NewHTTPInfoPoint(url string, opts ...HTTPInfoPointOption) *HTTPInfoPoint {
-	pip := &HTTPInfoPoint{
+// NewInfoPoint returns a HTTP based Policy Information Point (PIP).
+func NewInfoPoint(url string, opts ...InfoPointOption) *InfoPoint {
+	pip := &InfoPoint{
 		url: url,
 		cli: http.DefaultClient,
 	}
@@ -27,14 +29,14 @@ func NewHTTPInfoPoint(url string, opts ...HTTPInfoPointOption) *HTTPInfoPoint {
 }
 
 // WithClient configures the HTTP client to use.
-func WithClient(cli *http.Client) HTTPInfoPointOption {
-	return func(p *HTTPInfoPoint) {
+func WithClient(cli *http.Client) InfoPointOption {
+	return func(p *InfoPoint) {
 		p.cli = cli
 	}
 }
 
 // GetResourceContext implements the InfoPoint interface.
-func (pip *HTTPInfoPoint) GetResourceContext(ctx context.Context, resource string) (Context, error) {
+func (pip *InfoPoint) GetResourceContext(ctx context.Context, resource string) (enforcer.Context, error) {
 	req, err := http.NewRequest("GET", pip.url, nil)
 	if err != nil {
 		return nil, err
@@ -49,7 +51,7 @@ func (pip *HTTPInfoPoint) GetResourceContext(ctx context.Context, resource strin
 		return nil, fmt.Errorf("Unexpected status code %q from %q", res.Status, pip.url)
 	}
 
-	var c Context
+	var c enforcer.Context
 	if err := json.NewDecoder(res.Body).Decode(&c); err != nil {
 		return nil, err
 	}

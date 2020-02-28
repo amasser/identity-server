@@ -10,15 +10,15 @@ import (
 // LadonEnforcer implements the Enforcer interface based on
 // awesome ory/ladon package.
 type LadonEnforcer struct {
-	*ProxyInfoPoint
+	infoPoint InfoPoint
 
 	warden ladon.Warden
 }
 
 // NewLadonEnforcer returns a new ory/ladon based enforcer.
-func NewLadonEnforcer(manager ladon.Manager) *LadonEnforcer {
+func NewLadonEnforcer(manager ladon.Manager, infoPoint InfoPoint) *LadonEnforcer {
 	return &LadonEnforcer{
-		ProxyInfoPoint: NewProxyInfoPoint(),
+		infoPoint: infoPoint,
 		warden: &ladon.Ladon{
 			Manager: manager,
 		},
@@ -29,12 +29,12 @@ func NewLadonEnforcer(manager ladon.Manager) *LadonEnforcer {
 func (e *LadonEnforcer) Enforce(ctx context.Context, subject, action, resource string, context Context) error {
 	// TODO(ppacher): get subject and resource context in parallel.
 
-	subjectContext, err := e.GetResourceContext(ctx, subject)
+	subjectContext, err := e.infoPoint.GetResourceContext(ctx, subject)
 	if err != nil {
 		return nil
 	}
 
-	resourceContext, err := e.GetResourceContext(ctx, resource)
+	resourceContext, err := e.infoPoint.GetResourceContext(ctx, resource)
 	if err != nil {
 		return nil
 	}
