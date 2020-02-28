@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/tierklinik-dobersberg/identity-server/cmd/iamcli/session"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/client"
 )
 
 var tokenStore session.TokenStore
@@ -28,11 +28,11 @@ func initTokenStore(cmd *cobra.Command) error {
 	}
 
 	if len(parts) == 2 && parts[0] == "env" {
-		tokenStore = session.NewEnvLoader(parts[1])
+		tokenStore = client.NewEnvLoader(parts[1])
 		return nil
 	}
 
-	tokenStore = session.NewFileTokenStore(parts[0])
+	tokenStore = client.NewFileTokenStore(parts[0])
 
 	return nil
 }
