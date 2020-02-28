@@ -29,34 +29,35 @@ func NewLadonEnforcer(manager ladon.Manager, infoPoint InfoPoint) *LadonEnforcer
 func (e *LadonEnforcer) Enforce(ctx context.Context, subject, action, resource string, context Context) error {
 	// TODO(ppacher): get subject and resource context in parallel.
 
-	subjectContext, err := e.infoPoint.GetResourceContext(ctx, subject)
-	if err != nil {
-		return nil
-	}
-
-	resourceContext, err := e.infoPoint.GetResourceContext(ctx, resource)
-	if err != nil {
-		return nil
-	}
-
 	resultCtx := make(Context)
-
 	for k, v := range context {
 		resultCtx[k] = v
 	}
 
-	for k, v := range subjectContext {
-		if _, ok := resultCtx[k]; ok {
-			return fmt.Errorf("subject-context duplicates context key %q", k)
+	if e.infoPoint != nil {
+		subjectContext, err := e.infoPoint.GetResourceContext(ctx, subject)
+		if err != nil {
+			return nil
 		}
-		resultCtx[k] = v
-	}
 
-	for k, v := range resourceContext {
-		if _, ok := resultCtx[k]; ok {
-			return fmt.Errorf("resource-context duplicates context key %q", k)
+		resourceContext, err := e.infoPoint.GetResourceContext(ctx, resource)
+		if err != nil {
+			return nil
 		}
-		resultCtx[k] = v
+
+		for k, v := range subjectContext {
+			if _, ok := resultCtx[k]; ok {
+				return fmt.Errorf("subject-context duplicates context key %q", k)
+			}
+			resultCtx[k] = v
+		}
+
+		for k, v := range resourceContext {
+			if _, ok := resultCtx[k]; ok {
+				return fmt.Errorf("resource-context duplicates context key %q", k)
+			}
+			resultCtx[k] = v
+		}
 	}
 
 	request := &ladon.Request{
