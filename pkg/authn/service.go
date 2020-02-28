@@ -71,7 +71,7 @@ func (s *service) ArchiveAccount(id int) error {
 }
 
 func (s *service) GetAccount(id int) (Account, error) {
-	ac, err := s.GetAccount(id)
+	ac, err := s.cli.GetAccount(strconv.Itoa(id))
 	if err != nil {
 		return Account{}, err
 	}
