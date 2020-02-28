@@ -17,7 +17,7 @@ func (r *policyRepo) Store(ctx context.Context, policy iam.Policy) error {
 	r.l.Lock()
 	defer r.l.Unlock()
 
-	r.m[policy.ID] = policy
+	r.m[iam.PolicyURN(policy.ID)] = policy
 	return nil
 }
 

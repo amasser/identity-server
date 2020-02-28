@@ -1,0 +1,18 @@
+{
+    "name": "AdminRulesThemAll",
+    "policy": {
+        "subjects": [
+            "urn:iam::user/1"
+        ],
+        "effect": "allow",
+        "resources": [
+            "",
+            "urn:iam::user/<.*>"
+        ],
+        "actions": [
+            "iam:user:<.*>",
+            "iam:group:<.*>",
+            "iam:policy:<.*>"
+        ]
+    }
+}

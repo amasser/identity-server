@@ -8,10 +8,5 @@ type PolicyURN string
 
 // Policy wraps ladon.DefaultPolicy
 type Policy struct {
-	ID PolicyURN `json:"id"`
 	ladon.DefaultPolicy
-}
-
-func (p *Policy) GetID() string {
-	return string(p.ID)
 }

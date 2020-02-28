@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/tierklinik-dobersberg/identity-server/iam"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/common"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/mutex"
 )
 
@@ -32,18 +33,22 @@ type service struct {
 }
 
 func (s *service) Create(ctx context.Context, name string, policy iam.Policy) (iam.PolicyURN, error) {
+	if name == "" {
+		return "", common.NewInvalidArgumentError("invalid policy name")
+	}
+
 	if !s.m.TryLock(ctx) {
 		return "", ctx.Err()
 	}
 	defer s.m.Unlock()
 
-	policy.ID = iam.PolicyURN(fmt.Sprintf("urn:iam::policy/%s", name))
+	policy.ID = fmt.Sprintf("urn:iam::policy/%s", name)
 
 	if err := s.repo.Store(ctx, policy); err != nil {
 		return "", nil
 	}
 
-	return policy.ID, nil
+	return iam.PolicyURN(policy.ID), nil
 }
 
 func (s *service) Delete(ctx context.Context, urn iam.PolicyURN) error {
@@ -70,7 +75,7 @@ func (s *service) Update(ctx context.Context, urn iam.PolicyURN, p iam.Policy) e
 	}
 	defer s.m.Unlock()
 
-	p.ID = urn
+	p.ID = string(urn)
 	if err := s.repo.Store(ctx, p); err != nil {
 		return err
 	}
@@ -84,7 +89,17 @@ func (s *service) List(ctx context.Context) ([]iam.Policy, error) {
 	}
 	defer s.m.Unlock()
 
-	return s.repo.Get(ctx)
+	policies, err := s.repo.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, p := range policies {
+		p.DefaultPolicy.ID = string(p.ID)
+		policies[i] = p
+	}
+
+	return policies, nil
 }
 
 // NewService returns a new policy management service.
