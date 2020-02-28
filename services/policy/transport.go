@@ -84,10 +84,95 @@ func MakeHandler(s Service, extractor authn.SubjectExtractorFunc, authz enforcer
 
 	r := mux.NewRouter()
 
+	// swagger:route GET /v1/policies/  policies listPolicies
+	//
+	// List all access policies managed by IAM.
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	// 	Responses:
+	//		default: body:genericError
+	//		200: listPoliciesResponse
 	r.Handle("/v1/policies/", listPoliciesHandler).Methods("GET")
+
+	// swagger:route POST /v1/policies/ policies createPolicy
+	//
+	// Create a new access policy in IAM.
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	+	in: body
+	//		type: createPolicyRequest
+	//
+	//	Responses:
+	//		default: body:genericError
+	//		200: createPolicyResponse
 	r.Handle("/v1/policies/", createPolicyHandler).Methods("POST")
+
+	// swagger:route GET /v1/policies/{id} policies getPolicy
+	//
+	// Load a specific policy.
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	+	in: path
+	//		name: id
+	//		description: The ID of the policy to load.
+	//
+	//	Responses:
+	//		default: body:genericError
+	//		200: Policy
 	r.Handle("/v1/policies/{id}", loadPolicyHandler).Methods("GET")
+
+	// swagger:route PUT /v1/policies/{id} policies updatePolicy
+	//
+	// Update an existing policy.
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	// 	Parameters:
+	//	+	in: path
+	//		name: id
+	//		description: The ID of the policy to update
+	//	+	in: body
+	//		type: updatePolicyRequest
+	///
+	//	Responses:
+	//		default: body:genericError
+	//		201: description: Policy updated successfully.
 	r.Handle("/v1/policies/{id}", updatePolicyHandler).Methods("PUT")
+
+	// swagger:route DELETE /v1/policies/{id] policies deletePolicy
+	//
+	// Delete an existing policy from IAM.
+	//
+	// 	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	+ 	in: path
+	//		name: id
+	//		description: The ID of the policy to delete.
+	//
+	//	Responses:
+	//		default: body:genericError
+	//		201: description: Policy deleted successfully.
 	r.Handle("/v1/policies/{id}", deletePolicyHandler).Methods("DELETE")
 
 	return r

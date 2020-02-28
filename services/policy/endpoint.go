@@ -13,7 +13,10 @@ type createPolicyRequest struct {
 	Policy iam.Policy `json:"policy"`
 }
 
+// Response after successfully creating a new policy.
+// swagger:model createPolicyResponse
 type createPolicyResponse struct {
+	// URN of the newly created policy.
 	URN iam.PolicyURN `json:"urn"`
 }
 
@@ -90,7 +93,11 @@ func makeLoadPolicyEndpoint(s Service) endpoint.Endpoint {
 }
 
 type listPoliciesRequest struct{}
+
+// All policies managed by IAM.
+// swagger:model listPoliciesResponse
 type listPoliciesResponse struct {
+	// Policies is a list of policies managed by IAM.
 	Policies []iam.Policy `json:"policies"`
 }
 
