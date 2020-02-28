@@ -7,7 +7,7 @@
         "effect": "allow",
         "resources": [
             "",
-            "urn:iam::user/<.*>"
+            "urn:iam::<user|group|policy>/<.*>"
         ],
         "actions": [
             "iam:user:<.*>",
