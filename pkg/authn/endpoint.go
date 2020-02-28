@@ -6,10 +6,17 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/transport/http"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/enforcer"
 )
+
+type contextKey string
+
+// ContextKeyJWT is used by NewAuthenticator to add the parsed
+// and validated JWT token to the request context.
+const ContextKeyJWT contextKey = "authn:jwt-token"
 
 // SubjectExtractorFunc extracts and validates the JWT user subject from
 // the token.
@@ -37,10 +44,38 @@ func NewAuthenticator(fn SubjectExtractorFunc) endpoint.Middleware {
 				return nil, err
 			}
 
-			// Add the accountID as a UserURN to the request context.
+			// We use ParseUnverified here because thze SubjectExtractorFunc is expected
+			// to verify the token. We cannot do any verification here because we just
+			// don't know enough about the token to parse.
+			token, _, err := new(jwt.Parser).ParseUnverified(idToken, &jwt.StandardClaims{})
+			if err != nil {
+				return nil, err
+			}
+
+			// We add the whole JWT as well as an identity-server UserURN to
+			// the request context.
+			ctx = context.WithValue(ctx, ContextKeyJWT, token)
 			ctx = enforcer.WithSubject(ctx, fmt.Sprintf("urn:iam::user/%s", accountID))
 
 			return next(ctx, request)
 		}
 	}
+}
+
+// LogFields returns authn related fields that might be useful in
+// log statements.
+func LogFields(ctx context.Context) []interface{} {
+	if val := ctx.Value(ContextKeyJWT); val != nil {
+		token := val.(*jwt.Token)
+		claims := token.Claims.(*jwt.StandardClaims)
+
+		return []interface{}{
+			"subject", claims.Subject,
+			"issuer", claims.Issuer,
+			"audience", claims.Audience,
+			"expiresAt", claims.ExpiresAt,
+		}
+	}
+
+	return nil
 }
