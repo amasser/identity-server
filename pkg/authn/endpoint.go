@@ -37,23 +37,24 @@ func NewAuthenticator(fn SubjectExtractorFunc) endpoint.Middleware {
 			if !strings.HasPrefix(bearer, "Bearer") {
 				return nil, errors.New("invalid authorization key")
 			}
-
 			idToken := strings.Replace(bearer, "Bearer ", "", 1)
-			accountID, err := fn(idToken)
-			if err != nil {
-				return nil, err
-			}
 
-			// We use UnsafeClaimsWithoutVerification here because thze SubjectExtractorFunc is expected
-			// to verify the token. We cannot do any verification here because we just
-			// don't know enough about the token to parse.
 			token, err := jwt.ParseSigned(idToken)
 			if err != nil {
 				return nil, err
 			}
 
+			// We use UnsafeClaimsWithoutVerification here because the SubjectExtractorFunc is expected
+			// to verify the token. We cannot do any verification here because we just
+			// don't know enough about the token to parse.
 			var claims jwt.Claims
 			token.UnsafeClaimsWithoutVerification(&claims)
+
+			// fn should verify the token here ...
+			accountID, err := fn(idToken)
+			if err != nil {
+				return nil, fmt.Errorf("issuer=%q: %w", claims.Issuer, err)
+			}
 
 			// We add the whole JWT as well as an identity-server UserURN to
 			// the request context.

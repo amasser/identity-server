@@ -15,72 +15,96 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/tierklinik-dobersberg/identity-server/iam"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/authn"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/enforcer"
+)
+
+const (
+	// ActionWriteUser allows the subject to create new users.
+	ActionWriteUser = "iam:user:write"
+
+	// ActionLoadUser allows the subject to load a user.
+	ActionLoadUser = "iam:user:load"
+
+	// ActionListUsers allows the subject ot list users.
+	ActionListUsers = "iam:user:list"
+
+	// ActionDeleteUser allows the subject to delete a user.
+	ActionDeleteUser = "iam:user:delete"
+
+	// ActionLockUnlockUser allows the subject to lock or unlock a user account.
+	ActionLockUnlockUser = "iam:user:lock-unlock"
+
+	// ActionUpdateUserAttr allows the subject to update a users attributes.
+	ActionUpdateUserAttr = "iam:user:write-attr"
 )
 
 // MakeHandler returns a http.Handler for the user management service
-func MakeHandler(s Service, extractor authn.SubjectExtractorFunc, logger log.Logger) http.Handler {
+func MakeHandler(s Service, extractor authn.SubjectExtractorFunc, authz enforcer.Enforcer, logger log.Logger) http.Handler {
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
 		kithttp.ServerErrorEncoder(kithttp.DefaultErrorEncoder),
 		kithttp.ServerBefore(kithttp.PopulateRequestContext),
 	}
 
-	auth := authn.NewAuthenticator(extractor)
-	makeEndpoint := func(factory func(s Service) endpoint.Endpoint) endpoint.Endpoint {
-		return endpoint.Chain(auth)(factory(s))
+	makeEndpoint := func(action string, factory func(s Service) endpoint.Endpoint) endpoint.Endpoint {
+		return endpoint.Chain(
+			authn.NewAuthenticator(extractor),
+			enforcer.NewActionEndpoint(action),
+			enforcer.NewEnforcedEndpoint(authz),
+		)(factory(s))
 	}
 
 	createUserHandler := kithttp.NewServer(
-		makeEndpoint(makeCreateUserEndpoint),
+		makeEndpoint(ActionWriteUser, makeCreateUserEndpoint),
 		decodeCreateUserRequest,
 		encodeResponse,
 		opts...,
 	)
 
 	loadUserHandler := kithttp.NewServer(
-		makeEndpoint(makeLoadUserEndpoint),
+		makeEndpoint(ActionLoadUser, makeLoadUserEndpoint),
 		decodeLoadUserRequest,
 		encodeResponse,
 		opts...,
 	)
 
 	deleteUserHandler := kithttp.NewServer(
-		makeEndpoint(makeDeleteUserEndpoint),
+		makeEndpoint(ActionDeleteUser, makeDeleteUserEndpoint),
 		decodeDeleteUserRequest,
 		encodeStatusOnlyResponse,
 		opts...,
 	)
 
 	lockUserHandler := kithttp.NewServer(
-		makeEndpoint(makeLockUserEndpoint),
+		makeEndpoint(ActionLockUnlockUser, makeLockUserEndpoint),
 		decodeLockUserRequest,
 		encodeStatusOnlyResponse,
 		opts...,
 	)
 
 	listUsersHandler := kithttp.NewServer(
-		makeEndpoint(makeListUsersEndpoint),
+		makeEndpoint(ActionListUsers, makeListUsersEndpoint),
 		decodeListUserRequest,
 		encodeResponse,
 		opts...,
 	)
 
 	updateAttrHandler := kithttp.NewServer(
-		makeEndpoint(makeUpdateAttrsEndpoint),
+		makeEndpoint(ActionUpdateUserAttr, makeUpdateAttrsEndpoint),
 		decodeUpdateAttrRequest,
 		encodeStatusOnlyResponse,
 		opts...,
 	)
 
 	setAttrHandler := kithttp.NewServer(
-		makeEndpoint(makeSetAttrEndpoint),
+		makeEndpoint(ActionUpdateUserAttr, makeSetAttrEndpoint),
 		decodeSetAttrRequest,
 		encodeStatusOnlyResponse,
 		opts...,
 	)
 
 	deleteAttrHandler := kithttp.NewServer(
-		makeEndpoint(makeDeleteAttrRequest),
+		makeEndpoint(ActionUpdateUserAttr, makeDeleteAttrRequest),
 		decodeDeleteAttrRequest,
 		encodeStatusOnlyResponse,
 		opts...,

@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"github.com/tierklinik-dobersberg/identity-server/iam"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/enforcer"
 )
 
 func Test_decodeCreateUserRequest(t *testing.T) {
@@ -211,7 +212,7 @@ func Test_decodeDelAttrRequest(t *testing.T) {
 func Test_MakeHandler(t *testing.T) {
 	svc, _, _ := setupServiceTestBed()
 	jwtTokenExtractor := func(string) (string, error) { return "", nil }
-	r := MakeHandler(svc, jwtTokenExtractor, log.NewNopLogger())
+	r := MakeHandler(svc, jwtTokenExtractor, enforcer.NewNoOpEnforcer(), log.NewNopLogger())
 	assert.NotNil(t, r)
 }
 

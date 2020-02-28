@@ -14,65 +14,77 @@ import (
 	"github.com/tierklinik-dobersberg/identity-server/iam"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/authn"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/common"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/enforcer"
+)
+
+const (
+	// ActionGroupRead represents the action to read one or more groups.
+	ActionGroupRead = "iam:groups.read"
+
+	// ActionGroupWrite is the action to create, delete or update groups.
+	ActionGroupWrite = "iam:groups.write"
 )
 
 // MakeHandler returns a http.Handler for the group management service
-func MakeHandler(s Service, extractor authn.SubjectExtractorFunc, logger log.Logger) http.Handler {
+func MakeHandler(s Service, extractor authn.SubjectExtractorFunc, authz enforcer.Enforcer, logger log.Logger) http.Handler {
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
 		kithttp.ServerErrorEncoder(kithttp.DefaultErrorEncoder),
 		kithttp.ServerBefore(kithttp.PopulateRequestContext),
 	}
 
-	auth := authn.NewAuthenticator(extractor)
-	makeEndpoint := func(factory func(Service) endpoint.Endpoint) endpoint.Endpoint {
-		return endpoint.Chain(auth)(factory(s))
+	makeEndpoint := func(action string, factory func(Service) endpoint.Endpoint) endpoint.Endpoint {
+		return endpoint.Chain(
+			authn.NewAuthenticator(extractor),
+			enforcer.NewActionEndpoint(action),
+			enforcer.NewEnforcedEndpoint(authz),
+		)(factory(s))
 	}
 
 	listGroupsHandler := kithttp.NewServer(
-		makeEndpoint(makeGetGroupsEndpoint),
+		makeEndpoint(ActionGroupRead, makeGetGroupsEndpoint),
 		decodeGetGroupsRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,
 	)
 
 	createGroupHandler := kithttp.NewServer(
-		makeEndpoint(makeCreateGroupEndpoint),
+		makeEndpoint(ActionGroupWrite, makeCreateGroupEndpoint),
 		decodeCreateGroupRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,
 	)
 
 	deleteGroupHandler := kithttp.NewServer(
-		makeEndpoint(makeDeleteGroupEndpoint),
+		makeEndpoint(ActionGroupWrite, makeDeleteGroupEndpoint),
 		decodeDeleteGroupRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,
 	)
 
 	loadGroupHandler := kithttp.NewServer(
-		makeEndpoint(makeLoadGroupEndpoint),
+		makeEndpoint(ActionGroupRead, makeLoadGroupEndpoint),
 		decodeLoadGroupRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,
 	)
 
 	updateCommentHandler := kithttp.NewServer(
-		makeEndpoint(makeUpdateGroupCommentEndpoint),
+		makeEndpoint(ActionGroupWrite, makeUpdateGroupCommentEndpoint),
 		decodeUpdateCommentRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,
 	)
 
 	addMemberHandler := kithttp.NewServer(
-		makeEndpoint(makeAddMemberEndpoint),
+		makeEndpoint(ActionGroupWrite, makeAddMemberEndpoint),
 		decodeAddMemberRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,
 	)
 
 	deleteMemberHandler := kithttp.NewServer(
-		makeEndpoint(makeDeleteMemberEndpoint),
+		makeEndpoint(ActionGroupWrite, makeDeleteMemberEndpoint),
 		decodeDeleteMemberRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,

@@ -14,51 +14,69 @@ import (
 	"github.com/tierklinik-dobersberg/identity-server/iam"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/authn"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/common"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/enforcer"
+)
+
+const (
+	// ActionWritePolicy allows to create and update existing policies.
+	ActionWritePolicy = "iam:policy:write"
+
+	// ActionDeletePolicy allows a subject to delete policies.
+	ActionDeletePolicy = "iam:policy:delete"
+
+	// ActionLoadPolicy allows a subject to retrieve a policy.
+	ActionLoadPolicy = "iam:policy:load"
+
+	// ActionListPolicies allows a subject to list all policies.
+	ActionListPolicies = "iam:policy:list"
 )
 
 // MakeHandler returns a http.Handler for the policy management service.
-func MakeHandler(s Service, extractor authn.SubjectExtractorFunc, logger log.Logger) http.Handler {
+func MakeHandler(s Service, extractor authn.SubjectExtractorFunc, authz enforcer.Enforcer, logger log.Logger) http.Handler {
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
 		kithttp.ServerErrorEncoder(kithttp.DefaultErrorEncoder),
 		kithttp.ServerBefore(kithttp.PopulateRequestContext),
 	}
 
-	auth := authn.NewAuthenticator(extractor)
-	makeEndpoint := func(factory func(s Service) endpoint.Endpoint) endpoint.Endpoint {
-		return endpoint.Chain(auth)(factory(s))
+	makeEndpoint := func(action string, factory func(s Service) endpoint.Endpoint) endpoint.Endpoint {
+		return endpoint.Chain(
+			authn.NewAuthenticator(extractor),
+			enforcer.NewActionEndpoint(action),
+			enforcer.NewEnforcedEndpoint(authz),
+		)(factory(s))
 	}
 
 	createPolicyHandler := kithttp.NewServer(
-		makeEndpoint(makeCreatePolicyEndpoint),
+		makeEndpoint(ActionWritePolicy, makeCreatePolicyEndpoint),
 		decodeCreatePolicyRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,
 	)
 
 	deletePolicyHandler := kithttp.NewServer(
-		makeEndpoint(makeDeletePolicyEndpoint),
+		makeEndpoint(ActionDeletePolicy, makeDeletePolicyEndpoint),
 		decodeDeletePolicyRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,
 	)
 
 	loadPolicyHandler := kithttp.NewServer(
-		makeEndpoint(makeLoadPolicyEndpoint),
+		makeEndpoint(ActionLoadPolicy, makeLoadPolicyEndpoint),
 		decodeLoadPolicyRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,
 	)
 
 	updatePolicyHandler := kithttp.NewServer(
-		makeEndpoint(makeUpdatePolicyEndpoint),
+		makeEndpoint(ActionWritePolicy, makeUpdatePolicyEndpoint),
 		decodeUpdatePolicyRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,
 	)
 
 	listPoliciesHandler := kithttp.NewServer(
-		makeEndpoint(makeListPoliciesEndpoint),
+		makeEndpoint(ActionListPolicies, makeListPoliciesEndpoint),
 		decodeListPoliciesRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,

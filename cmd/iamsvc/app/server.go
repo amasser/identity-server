@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tierklinik-dobersberg/identity-server/iam"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/authn"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/enforcer"
 	"github.com/tierklinik-dobersberg/identity-server/repos/bbolt"
 	"github.com/tierklinik-dobersberg/identity-server/repos/inmem"
 	"github.com/tierklinik-dobersberg/identity-server/services/group"
@@ -94,6 +95,7 @@ func runMain(cmd *cobra.Command, args []string) error {
 
 	// Create authn client service
 	var as authn.Service
+	var jwtTokenExtractor authn.SubjectExtractorFunc
 	{
 		cfg, err := getAuthnConfig(cmd)
 		if err != nil {
@@ -103,10 +105,8 @@ func runMain(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-	}
 
-	jwtTokenExtractor := func(token string) (subject string, err error) {
-		return "", nil
+		jwtTokenExtractor = as.ExtractTokenSubject
 	}
 
 	// User management service
@@ -131,13 +131,19 @@ func runMain(cmd *cobra.Command, args []string) error {
 		ps = policy.NewLoggingService(log.With(logger, "component", "policy"), ps)
 	}
 
+	// Create the authorizer used to protect our endpoints
+	var authorizer enforcer.Enforcer
+	{
+		authorizer = enforcer.NewNoOpEnforcer()
+	}
+
 	// Setup HTTP server handlers
 	mux := http.NewServeMux()
 	httpLogger := log.With(logger, "component", "http")
 	{
-		mux.Handle("/v1/users/", user.MakeHandler(us, jwtTokenExtractor, httpLogger))
-		mux.Handle("/v1/groups/", group.MakeHandler(gs, jwtTokenExtractor, httpLogger))
-		mux.Handle("/v1/policies/", policy.MakeHandler(ps, jwtTokenExtractor, httpLogger))
+		mux.Handle("/v1/users/", user.MakeHandler(us, jwtTokenExtractor, authorizer, httpLogger))
+		mux.Handle("/v1/groups/", group.MakeHandler(gs, jwtTokenExtractor, authorizer, httpLogger))
+		mux.Handle("/v1/policies/", policy.MakeHandler(ps, jwtTokenExtractor, authorizer, httpLogger))
 	}
 	http.Handle("/", mux)
 

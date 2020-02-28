@@ -8,6 +8,7 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/enforcer"
 )
 
 func Test_decodeGetGroupsRequest(t *testing.T) {
@@ -132,7 +133,7 @@ func Test_decodeDeleteMemberRequest(t *testing.T) {
 func Test_MakeHandler(t *testing.T) {
 	s := &mockService{}
 	extractor := func(string) (string, error) { return "", nil }
-	_ = MakeHandler(s, extractor, log.NewNopLogger())
+	_ = MakeHandler(s, extractor, enforcer.NewNoOpEnforcer(), log.NewNopLogger())
 }
 
 func Test_decodeUpdateCommentRequest(t *testing.T) {

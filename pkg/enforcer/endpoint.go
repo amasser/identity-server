@@ -62,7 +62,7 @@ func WithResource(ctx context.Context, resource string) context.Context {
 // Resource returns the resource associated with ctx.
 func Resource(ctx context.Context) (string, bool) {
 	val := ctx.Value(ContextKeyResource)
-	if val == "" {
+	if val == nil {
 		return "", false
 	}
 	return val.(string), true
@@ -124,10 +124,12 @@ func NewEnforcedEndpoint(enforcer Enforcer) endpoint.Middleware {
 				return nil, &PermissionDeniedError{"No subject defined"}
 			}
 
-			resource, ok := Resource(ctx)
-			if !ok {
-				return nil, &PermissionDeniedError{"No resource defined"}
-			}
+			resource, _ := Resource(ctx)
+			/*
+				if !ok {
+					return nil, &PermissionDeniedError{"No resource defined"}
+				}
+			*/
 
 			context, _ := PolicyContext(ctx)
 
