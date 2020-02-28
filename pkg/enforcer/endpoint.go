@@ -82,9 +82,36 @@ func PolicyContext(ctx context.Context) (Context, bool) {
 	return val.(Context), true
 }
 
-// Enforce returns an endpoint.Middleware that uses enforcer to ensure
+// NewActionEndpoint adds the specified endpoint the each request context of
+// the wrapped endpoint.
+func NewActionEndpoint(action string) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (interface{}, error) {
+			ctx = WithAction(ctx, action)
+			return next(ctx, request)
+		}
+	}
+}
+
+// NewResourceEndpoint returns an endpoint.Middleware that extracts a the resource name from a request
+// and adds it to the request context of the wrapped endpoint.
+func NewResourceEndpoint(resourcer func(ctx context.Context, request interface{}) (string, error)) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (interface{}, error) {
+			resource, err := resourcer(ctx, request)
+			if err != nil {
+				return nil, err
+			}
+
+			ctx = WithResource(ctx, resource)
+			return next(ctx, request)
+		}
+	}
+}
+
+// NewEnforcedEndpoint returns an endpoint.Middleware that uses enforcer to ensure
 // the request subject is allowed to perform the given action on a resource.
-func Enforce(enforcer Enforcer) endpoint.Middleware {
+func NewEnforcedEndpoint(enforcer Enforcer) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (interface{}, error) {
 			action, ok := Action(ctx)
