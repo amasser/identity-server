@@ -28,6 +28,7 @@ func addAuthNFlags(cmd *cobra.Command) {
 	flags.String("authn.password", "world", "Password for private authn-server endpoints")
 	flags.String("authn.issuer", "", "Issuer for the authn-server endpoint. Defaults to the value of --authn.server")
 	flags.String("authn.audience", "", "The audience for JWT access tokens")
+	flags.Bool("disable-authorization", false, "Disable policy based authorization. Only use for bootstrapping or testing. DO NOT USE IN PRODUCTION.")
 
 	cmd.MarkFlagRequired("authn.audience")
 }

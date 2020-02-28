@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/spf13/cobra"
 	"github.com/tierklinik-dobersberg/identity-server/iam"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/authn"
@@ -134,7 +135,13 @@ func runMain(cmd *cobra.Command, args []string) error {
 	// Create the authorizer used to protect our endpoints
 	var authorizer enforcer.Enforcer
 	{
-		authorizer = enforcer.NewNoOpEnforcer()
+		if b, _ := cmd.Flags().GetBool("disable-authorization"); b {
+			level.Warn(logger).Log("msg", "Authorization disabled!")
+			authorizer = enforcer.NewNoOpEnforcer()
+		} else {
+			var policyManager = enforcer.NewPolicyManager(policies)
+			authorizer = enforcer.NewLadonEnforcer(policyManager, nil)
+		}
 	}
 
 	// Setup HTTP server handlers
