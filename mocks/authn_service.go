@@ -31,6 +31,11 @@ func (a *AuthnService) ArchiveAccount(id int) error {
 	return a.Called(id).Error(0)
 }
 
+func (a *AuthnService) ExtractTokenSubject(token string) (string, error) {
+	args := a.Called(token)
+	return args.String(0), args.Error(1)
+}
+
 func NewAuthnService() *AuthnService {
 	return &AuthnService{}
 }

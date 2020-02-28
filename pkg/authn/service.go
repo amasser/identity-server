@@ -1,9 +1,12 @@
 package authn
 
 import (
+	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/keratin/authn-go/authn"
+	"gopkg.in/square/go-jose.v2/jwt"
 )
 
 // Account is a user account managed by authn-server
@@ -30,10 +33,15 @@ type Service interface {
 
 	// ArchiveAccount archives a user account
 	ArchiveAccount(id int) error
+
+	// ExtractTokenSubject verifies the JWT token and returns
+	// the subject it was issued to.
+	ExtractTokenSubject(token string) (string, error)
 }
 
 type service struct {
-	cli *authn.Client
+	cli       *authn.Client
+	audiences jwt.Audience
 }
 
 // NewService returns a new authn-service
@@ -41,7 +49,7 @@ func NewService(cfg Config) (Service, error) {
 	cli, err := authn.NewClient(authn.Config{
 		Issuer:         cfg.Issuer,
 		PrivateBaseURL: cfg.PrivateBaseAddress,
-		Audience:       cfg.Audience,
+		Audience:       string(cfg.Audiences[0]), // TODO(ppacher): this is ugly, make it better :)
 		Username:       cfg.Username,
 		Password:       cfg.Password,
 	})
@@ -82,4 +90,21 @@ func (s *service) GetAccount(id int) (Account, error) {
 		Locked:   ac.Locked,
 		Deleted:  ac.Deleted,
 	}, nil
+}
+
+func (s *service) ExtractTokenSubject(token string) (string, error) {
+	if len(s.audiences) == 0 {
+		return s.cli.SubjectFromWithAudience(token, nil)
+	}
+
+	errors := make([]string, 0, len(s.audiences))
+	for _, audience := range s.audiences {
+		if subject, err := s.cli.SubjectFromWithAudience(token, jwt.Audience{audience}); err == nil {
+			return subject, nil
+		} else {
+			errors = append(errors, err.Error())
+		}
+	}
+
+	return "", fmt.Errorf("invalid audience: %s", strings.Join(errors, ", "))
 }
