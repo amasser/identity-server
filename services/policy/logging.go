@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/log"
-	"github.com/tierklinik-dobersberg/identity-server/iam"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/iam"
 )
 
 type loggingService struct {

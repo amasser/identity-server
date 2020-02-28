@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/ory/ladon"
-	"github.com/tierklinik-dobersberg/identity-server/iam"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/common"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/iam"
 )
 
 // PolicyManager implements the ladon.Manager interface.

@@ -13,9 +13,9 @@ import (
 	"github.com/go-kit/kit/transport"
 	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
-	"github.com/tierklinik-dobersberg/identity-server/iam"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/authn"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/enforcer"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/iam"
 )
 
 const (

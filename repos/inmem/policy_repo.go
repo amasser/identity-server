@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/tierklinik-dobersberg/identity-server/iam"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/common"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/iam"
 )
 
 type policyRepo struct {

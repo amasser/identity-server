@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/go-kit/kit/log"
-	"github.com/tierklinik-dobersberg/identity-server/iam"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/common"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/iam"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/mutex"
 	"github.com/tierklinik-dobersberg/identity-server/services/user"
 )

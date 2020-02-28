@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"github.com/tierklinik-dobersberg/identity-server/iam"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/iam"
 	"go.etcd.io/bbolt"
 )
 

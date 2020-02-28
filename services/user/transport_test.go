@@ -11,8 +11,8 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
-	"github.com/tierklinik-dobersberg/identity-server/iam"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/enforcer"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/iam"
 )
 
 func Test_decodeCreateUserRequest(t *testing.T) {

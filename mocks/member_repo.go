@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/stretchr/testify/mock"
-	"github.com/tierklinik-dobersberg/identity-server/iam"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/iam"
 )
 
 type MembershipRepository struct {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/tierklinik-dobersberg/identity-server/iam"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/common"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/iam"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/mutex"
 )
 

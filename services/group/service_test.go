@@ -8,9 +8,9 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/tierklinik-dobersberg/identity-server/iam"
 	"github.com/tierklinik-dobersberg/identity-server/mocks"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/common"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/iam"
 	"github.com/tierklinik-dobersberg/identity-server/services/user"
 )
 

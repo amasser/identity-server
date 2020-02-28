@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/tierklinik-dobersberg/identity-server/iam"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/iam"
 )
 
 func Test_userEndpoint(t *testing.T) {

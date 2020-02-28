@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
-	"github.com/tierklinik-dobersberg/identity-server/iam"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/iam"
 )
 
 // Creates a new group in IAM:
