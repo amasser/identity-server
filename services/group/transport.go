@@ -92,12 +92,142 @@ func MakeHandler(s Service, extractor authn.SubjectExtractorFunc, authz enforcer
 
 	r := mux.NewRouter()
 
+	// swagger:route GET /v1/groups/ groups listGroups
+	//
+	// List all groups stored and managed by IAM.
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Responses:
+	//		default: body:genericError
+	//		200: groupList
 	r.Handle("/v1/groups/", listGroupsHandler).Methods("GET")
+
+	// swagger:route POST /v1/groups/ groups createGroup
+	//
+	// Create a new group.
+	//
+	// 	Produces:
+	//	- application/json
+	//
+	//	Consumes:
+	//	-application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	+	in: body
+	//		type: createGroupRequest
+	//
+	//	Responses:
+	//		default: body:genericError
+	//		200: createGroupResponse
 	r.Handle("/v1/groups/", createGroupHandler).Methods("POST")
+
+	// swagger:route GET /v1/groups/{id} groups getGroup
+	//
+	// Get a specific group.
+	//
+	// 	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	+	in: path
+	//		name: id
+	//		description: The ID of the group.
+	//
+	//	Responses:
+	//		default: body:genericError
+	//		200: Group
 	r.Handle("/v1/groups/{id}", loadGroupHandler).Methods("GET")
+
+	// swagger:route PUT /v1/groups/{id} groups updateGroupComment
+	//
+	// Update the comment of a specific group.
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	+	in: path
+	//		name: id
+	//		description: The ID of the group.
+	//	+	in: body
+	//		type: updateGroupCommentRequest
+	//
+	//	Responses:
+	//		default: body:genericError
+	//		201: description: Group updated successfully.
 	r.Handle("/v1/groups/{id}", updateCommentHandler).Methods("PUT", "PATCH")
+
+	// swagger:route DELETE /v1/groups/{id} groups deleteGroup
+	//
+	// Delete an existing group and remove all members of that group.
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	+	in: path
+	//		name: id
+	//		description: The ID of the group to delete.
+	//
+	//	Responses:
+	//		default: body:genericError
+	//		201: description: Group deleted successfully.
 	r.Handle("/v1/groups/{id}", deleteGroupHandler).Methods("DELETE")
+
+	// swagger:route PUT /v1/groups/{id}/members/{user} groups addMemberToGroup
+	//
+	// Add a new member to a group.
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	+	in: path
+	//		name: id
+	//		description: The ID of the group.
+	//	+	in:path
+	//		name: user
+	//		description: The ID of the user.
+	//
+	//	Responses:
+	//		default: body:genericError
+	//		201: description: User added successfully.
 	r.Handle("/v1/groups/{id}/members/{user}", addMemberHandler).Methods("PUT")
+
+	// swagger:route DELETE /v1/groups/{id}/members/{user} groups deleteMemberFromGroup
+	//
+	// Delete a user from a group.
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	// 	Parameters:
+	//	+	in: path
+	//		name: id
+	//		description: The ID of the group.
+	//	+	in: path
+	//		name: user
+	//		description: The ID of the user to remove from the group.
+	//
+	//	Responses:
+	//		default: body:genericError
+	//		201: description: User successfully removed from group.
 	r.Handle("/v1/groups/{id}/members/{user}", deleteMemberHandler).Methods("DELETE")
 
 	return r

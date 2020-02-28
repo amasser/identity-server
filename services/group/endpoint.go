@@ -8,12 +8,21 @@ import (
 	"github.com/tierklinik-dobersberg/identity-server/iam"
 )
 
+// Creates a new group in IAM:
+// swagger:model createGroupRequest
 type createGroupRequest struct {
-	Name    string `json:"name"`
+	// Name is the name of the new group.
+	// Required: true
+	Name string `json:"name"`
+
+	// Comment is an optional comment for the new group.
 	Comment string `json:"comment"`
 }
 
+// Response used in a successful call to createGroup
+// swagger:model createGroupResponse
 type createGroupResponse struct {
+	// URN is the URN of the newly created group.
 	URN iam.GroupURN `json:"urn"`
 }
 
@@ -68,8 +77,12 @@ func makeLoadGroupEndpoint(s Service) endpoint.Endpoint {
 }
 
 type getGroupsRequest struct{}
+
+// A list of all groups stored and managed by IAM.
+// swagger:model groupList
 type getGroupsResponse struct {
-	Groups []iam.Group `json:"groups"`
+	// All groups stored and managed by IAM.
+	Groups []iam.Group `json:"groups,omitempty"`
 }
 
 func makeGetGroupsEndpoint(s Service) endpoint.Endpoint {
@@ -83,9 +96,15 @@ func makeGetGroupsEndpoint(s Service) endpoint.Endpoint {
 	}
 }
 
+// Request body when updating a group comment.
+// swagger:model updateGroupCommentRequest
 type updateGroupCommentRequest struct {
-	URN        iam.GroupURN `json:"-"`
-	NewComment string       `json:"comment"`
+	// URN is the URN of the group to update.
+	// swagger:ignore
+	URN iam.GroupURN `json:"-"`
+
+	// The new comment for the group.
+	NewComment string `json:"comment"`
 }
 type updateGroupCommentResponse struct{}
 
