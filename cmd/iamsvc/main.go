@@ -8,10 +8,6 @@ import (
 	"github.com/tierklinik-dobersberg/identity-server/cmd/iamsvc/app"
 )
 
-var (
-	defaultPort = "8080"
-)
-
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
