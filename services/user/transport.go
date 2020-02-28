@@ -8,72 +8,79 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/transport"
 	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 	"github.com/tierklinik-dobersberg/identity-server/iam"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/authn"
 )
 
 // MakeHandler returns a http.Handler for the user management service
-func MakeHandler(s Service, logger log.Logger) http.Handler {
+func MakeHandler(s Service, extractor authn.SubjectExtractorFunc, logger log.Logger) http.Handler {
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
 		kithttp.ServerErrorEncoder(kithttp.DefaultErrorEncoder),
 		kithttp.ServerBefore(kithttp.PopulateRequestContext),
 	}
 
+	auth := authn.NewAuthenticator(extractor)
+	makeEndpoint := func(factory func(s Service) endpoint.Endpoint) endpoint.Endpoint {
+		return endpoint.Chain(auth)(factory(s))
+	}
+
 	createUserHandler := kithttp.NewServer(
-		makeCreateUserEndpoint(s),
+		makeEndpoint(makeCreateUserEndpoint),
 		decodeCreateUserRequest,
 		encodeResponse,
 		opts...,
 	)
 
 	loadUserHandler := kithttp.NewServer(
-		makeLoadUserEndpoint(s),
+		makeEndpoint(makeLoadUserEndpoint),
 		decodeLoadUserRequest,
 		encodeResponse,
 		opts...,
 	)
 
 	deleteUserHandler := kithttp.NewServer(
-		makeDeleteUserEndpoint(s),
+		makeEndpoint(makeDeleteUserEndpoint),
 		decodeDeleteUserRequest,
 		encodeStatusOnlyResponse,
 		opts...,
 	)
 
 	lockUserHandler := kithttp.NewServer(
-		makeLockUserEndpoint(s),
+		makeEndpoint(makeLockUserEndpoint),
 		decodeLockUserRequest,
 		encodeStatusOnlyResponse,
 		opts...,
 	)
 
 	listUsersHandler := kithttp.NewServer(
-		makeListUsersEndpoint(s),
+		makeEndpoint(makeListUsersEndpoint),
 		decodeListUserRequest,
 		encodeResponse,
 		opts...,
 	)
 
 	updateAttrHandler := kithttp.NewServer(
-		makeUpdateAttrsEndpoint(s),
+		makeEndpoint(makeUpdateAttrsEndpoint),
 		decodeUpdateAttrRequest,
 		encodeStatusOnlyResponse,
 		opts...,
 	)
 
 	setAttrHandler := kithttp.NewServer(
-		makeSetAttrEndpoint(s),
+		makeEndpoint(makeSetAttrEndpoint),
 		decodeSetAttrRequest,
 		encodeStatusOnlyResponse,
 		opts...,
 	)
 
 	deleteAttrHandler := kithttp.NewServer(
-		makeDeleteAttrRequest(s),
+		makeEndpoint(makeDeleteAttrRequest),
 		decodeDeleteAttrRequest,
 		encodeStatusOnlyResponse,
 		opts...,

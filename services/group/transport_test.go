@@ -131,7 +131,8 @@ func Test_decodeDeleteMemberRequest(t *testing.T) {
 
 func Test_MakeHandler(t *testing.T) {
 	s := &mockService{}
-	_ = MakeHandler(s, log.NewNopLogger())
+	extractor := func(string) (string, error) { return "", nil }
+	_ = MakeHandler(s, extractor, log.NewNopLogger())
 }
 
 func Test_decodeUpdateCommentRequest(t *testing.T) {

@@ -105,6 +105,10 @@ func runMain(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	jwtTokenExtractor := func(token string) (subject string, err error) {
+		return "", nil
+	}
+
 	// User management service
 	var us user.Service
 	{
@@ -131,9 +135,9 @@ func runMain(cmd *cobra.Command, args []string) error {
 	mux := http.NewServeMux()
 	httpLogger := log.With(logger, "component", "http")
 	{
-		mux.Handle("/v1/users/", user.MakeHandler(us, httpLogger))
-		mux.Handle("/v1/groups/", group.MakeHandler(gs, httpLogger))
-		mux.Handle("/v1/policies/", policy.MakeHandler(ps, httpLogger))
+		mux.Handle("/v1/users/", user.MakeHandler(us, jwtTokenExtractor, httpLogger))
+		mux.Handle("/v1/groups/", group.MakeHandler(gs, jwtTokenExtractor, httpLogger))
+		mux.Handle("/v1/policies/", policy.MakeHandler(ps, jwtTokenExtractor, httpLogger))
 	}
 	http.Handle("/", mux)
 

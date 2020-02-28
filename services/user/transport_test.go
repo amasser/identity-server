@@ -210,7 +210,8 @@ func Test_decodeDelAttrRequest(t *testing.T) {
 
 func Test_MakeHandler(t *testing.T) {
 	svc, _, _ := setupServiceTestBed()
-	r := MakeHandler(svc, log.NewNopLogger())
+	jwtTokenExtractor := func(string) (string, error) { return "", nil }
+	r := MakeHandler(svc, jwtTokenExtractor, log.NewNopLogger())
 	assert.NotNil(t, r)
 }
 

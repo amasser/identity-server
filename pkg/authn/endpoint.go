@@ -14,7 +14,7 @@ import (
 
 type contextKey string
 
-// ContextKeyJWT is used by NewAuthenticator to add the parsed
+// ContextKeyJWTClaims is used by NewAuthenticator to add the parsed
 // and validated JWT token to the request context.
 const ContextKeyJWTClaims contextKey = "authn:jwt-token"
 

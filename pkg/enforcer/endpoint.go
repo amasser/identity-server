@@ -9,31 +9,31 @@ import (
 type contextKey string
 
 const (
-	// EnforcerActionContextKey is used to store the action that is being performed
+	// ContextKeyAction is used to store the action that is being performed
 	// in a request context.
-	EnforcerActionContextKey contextKey = "enforcer:action"
+	ContextKeyAction contextKey = "enforcer:action"
 
-	// EnforcerSubjectContextKey is used to store the subject that is going to perform
+	// ContextKeySubject is used to store the subject that is going to perform
 	// an action in a request context.
-	EnforcerSubjectContextKey contextKey = "enforcer:subject"
+	ContextKeySubject contextKey = "enforcer:subject"
 
-	// EnforcerResourceContextKey is used to store the resource that is being operated
+	// ContextKeyResource is used to store the resource that is being operated
 	// on in a request context.
-	EnforcerResourceContextKey contextKey = "enforcer:resource"
+	ContextKeyResource contextKey = "enforcer:resource"
 
-	// EnforcerContextContextKey is used to store additional context values for an
+	// ContextKeyContext is used to store additional context values for an
 	// operation.
-	EnforcerContextContextKey contextKey = "enforcer:context"
+	ContextKeyContext contextKey = "enforcer:context"
 )
 
 // WithSubject adds subject to the request context.
 func WithSubject(ctx context.Context, subject string) context.Context {
-	return context.WithValue(ctx, EnforcerSubjectContextKey, subject)
+	return context.WithValue(ctx, ContextKeySubject, subject)
 }
 
 // Subject returns the subject associated with ctx.
 func Subject(ctx context.Context) (string, bool) {
-	val := ctx.Value(EnforcerSubjectContextKey)
+	val := ctx.Value(ContextKeySubject)
 	if val == nil {
 		return "", false
 	}
@@ -42,12 +42,12 @@ func Subject(ctx context.Context) (string, bool) {
 
 // WithAction adds action to the request context.
 func WithAction(ctx context.Context, action string) context.Context {
-	return context.WithValue(ctx, EnforcerActionContextKey, action)
+	return context.WithValue(ctx, ContextKeyAction, action)
 }
 
 // Action returns the action associated with ctx.
 func Action(ctx context.Context) (string, bool) {
-	val := ctx.Value(EnforcerActionContextKey)
+	val := ctx.Value(ContextKeyAction)
 	if val == nil {
 		return "", false
 	}
@@ -56,12 +56,12 @@ func Action(ctx context.Context) (string, bool) {
 
 // WithResource adds resource to the request context.
 func WithResource(ctx context.Context, resource string) context.Context {
-	return context.WithValue(ctx, EnforcerResourceContextKey, resource)
+	return context.WithValue(ctx, ContextKeyResource, resource)
 }
 
 // Resource returns the resource associated with ctx.
 func Resource(ctx context.Context) (string, bool) {
-	val := ctx.Value(EnforcerResourceContextKey)
+	val := ctx.Value(ContextKeyResource)
 	if val == "" {
 		return "", false
 	}
@@ -70,12 +70,12 @@ func Resource(ctx context.Context) (string, bool) {
 
 // WithPolicyContext adds values to the request context.
 func WithPolicyContext(ctx context.Context, values Context) context.Context {
-	return context.WithValue(ctx, EnforcerContextContextKey, values)
+	return context.WithValue(ctx, ContextKeyContext, values)
 }
 
 // PolicyContext returns the policy context associated with ctx.
 func PolicyContext(ctx context.Context) (Context, bool) {
-	val := ctx.Value(EnforcerContextContextKey)
+	val := ctx.Value(ContextKeyContext)
 	if val == nil {
 		return nil, false
 	}

@@ -6,65 +6,73 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/transport"
 	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 	"github.com/tierklinik-dobersberg/identity-server/iam"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/authn"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/common"
 )
 
 // MakeHandler returns a http.Handler for the group management service
-func MakeHandler(s Service, logger log.Logger) http.Handler {
+func MakeHandler(s Service, extractor authn.SubjectExtractorFunc, logger log.Logger) http.Handler {
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
 		kithttp.ServerErrorEncoder(kithttp.DefaultErrorEncoder),
+		kithttp.ServerBefore(kithttp.PopulateRequestContext),
+	}
+
+	auth := authn.NewAuthenticator(extractor)
+	makeEndpoint := func(factory func(Service) endpoint.Endpoint) endpoint.Endpoint {
+		return endpoint.Chain(auth)(factory(s))
 	}
 
 	listGroupsHandler := kithttp.NewServer(
-		makeGetGroupsEndpoint(s),
+		makeEndpoint(makeGetGroupsEndpoint),
 		decodeGetGroupsRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,
 	)
 
 	createGroupHandler := kithttp.NewServer(
-		makeCreateGroupEndpoint(s),
+		makeEndpoint(makeCreateGroupEndpoint),
 		decodeCreateGroupRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,
 	)
 
 	deleteGroupHandler := kithttp.NewServer(
-		makeDeleteGroupEndpoint(s),
+		makeEndpoint(makeDeleteGroupEndpoint),
 		decodeDeleteGroupRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,
 	)
 
 	loadGroupHandler := kithttp.NewServer(
-		makeLoadGroupEndpoint(s),
+		makeEndpoint(makeLoadGroupEndpoint),
 		decodeLoadGroupRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,
 	)
 
 	updateCommentHandler := kithttp.NewServer(
-		makeUpdateGroupCommentEndpoint(s),
+		makeEndpoint(makeUpdateGroupCommentEndpoint),
 		decodeUpdateCommentRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,
 	)
 
 	addMemberHandler := kithttp.NewServer(
-		makeAddMemberEndpoint(s),
+		makeEndpoint(makeAddMemberEndpoint),
 		decodeAddMemberRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,
 	)
 
 	deleteMemberHandler := kithttp.NewServer(
-		makeDeleteMemberEndpoint(s),
+		makeEndpoint(makeDeleteMemberEndpoint),
 		decodeDeleteMemberRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,

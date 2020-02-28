@@ -6,52 +6,59 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/transport"
 	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 	"github.com/tierklinik-dobersberg/identity-server/iam"
+	"github.com/tierklinik-dobersberg/identity-server/pkg/authn"
 	"github.com/tierklinik-dobersberg/identity-server/pkg/common"
 )
 
 // MakeHandler returns a http.Handler for the policy management service.
-func MakeHandler(s Service, logger log.Logger) http.Handler {
+func MakeHandler(s Service, extractor authn.SubjectExtractorFunc, logger log.Logger) http.Handler {
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
 		kithttp.ServerErrorEncoder(kithttp.DefaultErrorEncoder),
 		kithttp.ServerBefore(kithttp.PopulateRequestContext),
 	}
 
+	auth := authn.NewAuthenticator(extractor)
+	makeEndpoint := func(factory func(s Service) endpoint.Endpoint) endpoint.Endpoint {
+		return endpoint.Chain(auth)(factory(s))
+	}
+
 	createPolicyHandler := kithttp.NewServer(
-		makeCreatePolicyEndpoint(s),
+		makeEndpoint(makeCreatePolicyEndpoint),
 		decodeCreatePolicyRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,
 	)
 
 	deletePolicyHandler := kithttp.NewServer(
-		makeDeletePolicyEndpoint(s),
+		makeEndpoint(makeDeletePolicyEndpoint),
 		decodeDeletePolicyRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,
 	)
 
 	loadPolicyHandler := kithttp.NewServer(
-		makeLoadPolicyEndpoint(s),
+		makeEndpoint(makeLoadPolicyEndpoint),
 		decodeLoadPolicyRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,
 	)
 
 	updatePolicyHandler := kithttp.NewServer(
-		makeUpdatePolicyEndpoint(s),
+		makeEndpoint(makeUpdatePolicyEndpoint),
 		decodeUpdatePolicyRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,
 	)
 
 	listPoliciesHandler := kithttp.NewServer(
-		makeListPoliciesEndpoint(s),
+		makeEndpoint(makeListPoliciesEndpoint),
 		decodeListPoliciesRequest,
 		kithttp.EncodeJSONResponse,
 		opts...,
