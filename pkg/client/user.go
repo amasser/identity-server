@@ -34,14 +34,12 @@ func (uc *UserClient) CreateUser(ctx context.Context, username, password string,
 		return "", err
 	}
 
-	response := struct {
-		URN iam.UserURN `json:"urn"`
-	}{}
+	response := iam.User{}
 	if err := uc.parseResponse(res, &response); err != nil {
 		return "", err
 	}
 
-	return response.URN, nil
+	return response.ID, nil
 }
 
 // LoadUser loads the user identified by URN.
