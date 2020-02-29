@@ -134,6 +134,37 @@ var createUserCommand = &cobra.Command{
 	},
 }
 
+var lockUserCommand = &cobra.Command{
+	Use:   "lock",
+	Short: "Lock a user account",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		lockUnlock(true, cmd, args)
+	},
+}
+
+var unlockUserCommand = &cobra.Command{
+	Use:   "unlock",
+	Short: "Unlock a user account",
+	Args:  cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		lockUnlock(false, cmd, args)
+	},
+}
+
+func lockUnlock(lockUnlock bool, cmd *cobra.Command, args []string) {
+	uc := iamClient.Users()
+
+	urn := iam.UserURN(args[0])
+	if urn.AccountID() == "" {
+		urn = iam.UserURN("urn:iam::user/" + urn)
+	}
+
+	if err := uc.LockUser(context.Background(), urn, lockUnlock); err != nil {
+		log.Fatal(err)
+	}
+}
+
 func init() {
 	RootCommand.AddCommand(userRootCommand)
 
@@ -145,5 +176,7 @@ func init() {
 		loadUserCommand,
 		deleteUserCommand,
 		createUserCommand,
+		lockUserCommand,
+		unlockUserCommand,
 	)
 }
