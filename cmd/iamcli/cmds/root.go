@@ -1,7 +1,6 @@
 package cmds
 
 import (
-	"log"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -16,10 +15,15 @@ var RootCommand = &cobra.Command{
 	Use:   "iamcli",
 	Short: "Manage users, groups and policies of your IAM server instance.",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		return initTokenStore(cmd)
-	},
-	Run: func(cmd *cobra.Command, args []string) {
-		log.Fatal("Run with --help for more information")
+		if err := initTokenStore(cmd); err != nil {
+			return err
+		}
+
+		if err := initClient(cmd); err != nil {
+			return err
+		}
+
+		return nil
 	},
 }
 

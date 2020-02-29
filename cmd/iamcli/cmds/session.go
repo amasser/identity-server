@@ -8,10 +8,10 @@ import (
 	"github.com/tierklinik-dobersberg/identity-server/pkg/client"
 )
 
-var tokenStore session.TokenStore
+var tokenStore client.TokenStore
 
 func init() {
-	RootCommand.PersistentFlags().StringP("access-token", "t", "", `AuthN JWT access token used to authenticate against IAM.
+	RootCommand.PersistentFlags().StringP("access-token", "t", "env:IAM_ACCESS_TOKEN", `AuthN JWT access token used to authenticate against IAM.
 Can either be a file path or an environment variable prefixed
 with 'env:'. For example, --access-token env:TOKEN`)
 }
