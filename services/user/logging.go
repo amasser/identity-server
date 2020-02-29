@@ -26,6 +26,7 @@ func (s *loggingService) CreateUser(ctx context.Context, username, password stri
 		s.logger.Log(
 			"method", "create_user",
 			"username", username,
+			"attribute_count", len(attrs),
 			"took", time.Since(begin),
 			"err", err,
 		)

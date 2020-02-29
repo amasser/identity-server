@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/ghodss/yaml"
 	"github.com/jedib0t/go-pretty/table"
@@ -13,8 +14,9 @@ import (
 )
 
 var userRootCommand = &cobra.Command{
-	Use:   "users",
-	Short: "Manage users stored in IAM.",
+	Use:     "users",
+	Aliases: []string{"user", "u"},
+	Short:   "Manage users stored in IAM.",
 }
 
 var listUsersCommand = &cobra.Command{
@@ -96,6 +98,7 @@ var createUserCommand = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		username := args[0]
 		password, _ := cmd.Flags().GetString("password")
+		attrs := make(map[string]interface{})
 
 		if password == "" {
 			fmt.Print("Password: ")
@@ -108,9 +111,21 @@ var createUserCommand = &cobra.Command{
 			password = string(pwd)
 		}
 
+		flagAttrs, err := cmd.Flags().GetStringSlice("attr")
+		if err == nil && flagAttrs != nil {
+			for _, value := range flagAttrs {
+				parts := strings.Split(value, "=")
+				if len(parts) != 2 {
+					log.Fatal("Invalid format in attribute " + value)
+				}
+
+				attrs[parts[0]] = parts[1]
+			}
+		}
+
 		uc := iamClient.Users()
 
-		urn, err := uc.CreateUser(context.Background(), username, password, nil)
+		urn, err := uc.CreateUser(context.Background(), username, password, attrs)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -123,6 +138,7 @@ func init() {
 	RootCommand.AddCommand(userRootCommand)
 
 	createUserCommand.Flags().StringP("password", "p", "", "Password for the new user.")
+	createUserCommand.Flags().StringSliceP("attr", "a", nil, "Set additional attributes for hte new user using a format of key=value.")
 
 	userRootCommand.AddCommand(
 		listUsersCommand,
