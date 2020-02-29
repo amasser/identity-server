@@ -40,7 +40,7 @@ func NewIdentityClient(url string, opts ...Option) *IdentityClient {
 }
 
 func (cli *IdentityClient) newRequest(ctx context.Context, method string, endpoint string, body interface{}) (*http.Request, error) {
-	req, err := http.NewRequest(method, cli.url+method, nil)
+	req, err := http.NewRequest(method, cli.url+endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
