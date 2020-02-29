@@ -143,12 +143,12 @@ type setAttrRequest struct {
 	// The name of the attribute
 	// in: path
 	// required: true
-	Key string `json:"key"`
+	Key string
 
 	// The value for the new attribute
 	// in: body
 	// required: true
-	Value interface{} `json:"value"`
+	Value interface{}
 }
 type setAttrResponse struct {
 	Err error `json:"error,omitempty"`
