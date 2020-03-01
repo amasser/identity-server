@@ -183,6 +183,11 @@ func (m *mockService) UpdateComment(ctx context.Context, urn iam.GroupURN, comme
 	return args.Error(0)
 }
 
+func (m *mockService) GetMembers(ctx context.Context, urn iam.GroupURN) ([]iam.UserURN, error) {
+	args := m.Called(urn)
+	return args.Get(0).([]iam.UserURN), args.Error(1)
+}
+
 func (m *mockService) AddMember(ctx context.Context, grp iam.GroupURN, member iam.UserURN) error {
 	args := m.Called(grp, member)
 	return args.Error(0)

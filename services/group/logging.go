@@ -71,6 +71,19 @@ func (s *loggingService) Load(ctx context.Context, urn iam.GroupURN) (grp iam.Gr
 	return s.Service.Load(ctx, urn)
 }
 
+func (s *loggingService) GetMembers(ctx context.Context, urn iam.GroupURN) (members []iam.UserURN, err error) {
+	defer func(begin time.Time) {
+		s.l.Log(
+			"method", "get_group_members",
+			"urn", "urn",
+			"took", time.Since(begin),
+			"count_members", len(members),
+			err, "err",
+		)
+	}(time.Now())
+	return s.Service.GetMembers(ctx, urn)
+}
+
 func (s *loggingService) UdpateComment(ctx context.Context, urn iam.GroupURN, comment string) (err error) {
 	defer func(begin time.Time) {
 		s.l.Log(

@@ -28,6 +28,9 @@ type Service interface {
 	// a list of members URNs.
 	Load(ctx context.Context, urn iam.GroupURN) (iam.Group, error)
 
+	// GetMembers returns a list or iam.UserURNs that are part of the group.
+	GetMembers(ctx context.Context, urn iam.GroupURN) ([]iam.UserURN, error)
+
 	// UpdateComment updates the comment of an account group.
 	UpdateComment(ctx context.Context, urn iam.GroupURN, comment string) error
 
@@ -134,6 +137,18 @@ func (s *service) Load(ctx context.Context, urn iam.GroupURN) (iam.Group, error)
 
 	grp, err := s.groups.Load(ctx, urn)
 	return grp, err
+}
+
+func (s *service) GetMembers(ctx context.Context, urn iam.GroupURN) ([]iam.UserURN, error) {
+	if urn == "" {
+		return nil, ErrInvalidParameter
+	}
+	if !s.l.TryLock(ctx) {
+		return nil, ctx.Err()
+	}
+	defer s.l.Unlock()
+
+	return s.members.Members(ctx, urn)
 }
 
 func (s *service) UpdateComment(ctx context.Context, urn iam.GroupURN, comment string) error {

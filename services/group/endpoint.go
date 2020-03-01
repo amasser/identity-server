@@ -76,6 +76,29 @@ func makeLoadGroupEndpoint(s Service) endpoint.Endpoint {
 	}
 }
 
+type getGroupMembersRequest struct {
+	URN iam.GroupURN
+}
+
+// A list of all users belong to a group.
+// swagger:model memberList
+type getGroupMembersResponse struct {
+	// Members holds all members of the group.
+	Members []iam.UserURN `json:"users,omitempty"`
+}
+
+func makeGetGroupMembersEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(getGroupMembersRequest)
+		users, err := s.GetMembers(ctx, req.URN)
+		if err != nil {
+			return nil, err
+		}
+
+		return getGroupMembersResponse{users}, nil
+	}
+}
+
 type getGroupsRequest struct{}
 
 // A list of all groups stored and managed by IAM.

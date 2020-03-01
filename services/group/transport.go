@@ -69,6 +69,13 @@ func MakeHandler(s Service, extractor authn.SubjectExtractorFunc, authz enforcer
 		opts...,
 	)
 
+	getGroupMembersHandler := kithttp.NewServer(
+		makeEndpoint(ActionGroupRead, makeGetGroupMembersEndpoint),
+		decodeGetGroupMembersRequest,
+		kithttp.EncodeJSONResponse,
+		opts...,
+	)
+
 	updateCommentHandler := kithttp.NewServer(
 		makeEndpoint(ActionGroupWrite, makeUpdateGroupCommentEndpoint),
 		decodeUpdateCommentRequest,
@@ -186,6 +193,25 @@ func MakeHandler(s Service, extractor authn.SubjectExtractorFunc, authz enforcer
 	//		201: description: Group deleted successfully.
 	r.Handle("/v1/groups/{id}", deleteGroupHandler).Methods("DELETE")
 
+	// swagger:route GET /v1/groups/{id}/members/ groups getGroupMembers
+	//
+	// Get a list of user URNs that are part of the group.
+	//
+	//	Produces:
+	//	- application/json
+	//
+	//	Schemes: http, https
+	//
+	//	Parameters:
+	//	+ 	in:path
+	//		name: id
+	//		description: The ID of the group.
+	//
+	//	Responses:
+	//		default: body:genericError
+	//		200: memberList
+	r.Handle("/v1/groups/{id}/members/", getGroupMembersHandler).Methods("GET")
+
 	// swagger:route PUT /v1/groups/{id}/members/{user} groups addMemberToGroup
 	//
 	// Add a new member to a group.
@@ -262,6 +288,15 @@ func decodeLoadGroupRequest(ctx context.Context, req *http.Request) (interface{}
 	}
 
 	return loadGroupRequest{URN: urn}, nil
+}
+
+func decodeGetGroupMembersRequest(ctx context.Context, req *http.Request) (interface{}, error) {
+	urn, err := getGroupURN(req, "id")
+	if err != nil {
+		return nil, err
+	}
+
+	return getGroupMembersRequest{URN: urn}, nil
 }
 
 func decodeUpdateCommentRequest(ctx context.Context, req *http.Request) (interface{}, error) {
