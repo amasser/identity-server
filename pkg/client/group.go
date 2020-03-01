@@ -131,6 +131,30 @@ func (gc *GroupClient) UpdateComment(ctx context.Context, urn iam.GroupURN, comm
 	return gc.parseResponse(res, nil)
 }
 
+// GetMembers returns all users URNs that are part of grp.
+func (gc *GroupClient) GetMembers(ctx context.Context, grp iam.GroupURN) ([]iam.UserURN, error) {
+	name := grp.GroupName()
+	if name == "" {
+		return nil, errors.New("Invalid group name")
+	}
+
+	req, err := gc.newRequest(ctx, "GET", "/v1/groups/"+name+"/members/", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := gc.cli.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	var response struct {
+		Members []iam.UserURN `json:"users"`
+	}
+
+	return response.Members, gc.parseResponse(res, &response)
+}
+
 // AddMember adds a new member to a group.
 func (gc *GroupClient) AddMember(ctx context.Context, grp iam.GroupURN, member iam.UserURN) error {
 	name := grp.GroupName()
