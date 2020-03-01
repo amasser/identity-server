@@ -91,6 +91,11 @@ func (cli *IdentityClient) Groups() *GroupClient {
 	return &GroupClient{cli}
 }
 
+// Policies returns a PolicyClient using this IdentityClient.
+func (cli *IdentityClient) Policies() *PolicyClient {
+	return &PolicyClient{cli}
+}
+
 // WithClient sets the http.Client that should be used.
 func WithClient(cli *http.Client) Option {
 	return func(c *IdentityClient) {
