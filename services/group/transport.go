@@ -19,10 +19,10 @@ import (
 
 const (
 	// ActionGroupRead represents the action to read one or more groups.
-	ActionGroupRead = "iam:groups.read"
+	ActionGroupRead = "iam:group:read"
 
 	// ActionGroupWrite is the action to create, delete or update groups.
-	ActionGroupWrite = "iam:groups.write"
+	ActionGroupWrite = "iam:group:write"
 )
 
 // MakeHandler returns a http.Handler for the group management service

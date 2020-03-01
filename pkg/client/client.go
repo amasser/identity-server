@@ -86,6 +86,11 @@ func (cli *IdentityClient) Users() *UserClient {
 	return &UserClient{cli}
 }
 
+// Groups returns a GroupClient using this IdentityClient.
+func (cli *IdentityClient) Groups() *GroupClient {
+	return &GroupClient{cli}
+}
+
 // WithClient sets the http.Client that should be used.
 func WithClient(cli *http.Client) Option {
 	return func(c *IdentityClient) {
